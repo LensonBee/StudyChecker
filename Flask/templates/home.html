@@ -1,0 +1,53 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="home">
+    <div class="hero">
+        <h1>
+            Study Checker
+        </h1>
+    </div>
+
+    <div>
+        <h2>
+            Why use StudyChecker?
+        </h2>
+
+        <h3>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </h3>
+    </div>
+
+    <div class="about">
+        <img src="static/images/home-about.jpg">
+    </div>
+
+    <div class="divider">
+        <hr>
+    </div>
+
+    <div class="buttons">
+        <a class="student-login" href="{{ url_for('student_login') }}">
+            <i class="fa-solid fa-user-graduate"></i>
+
+            <h4>Student Login</h4>
+        </a>
+
+        <a class="teacher-login">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            
+            <h4>Teacher Login</h4>
+        </a>
+
+        <a class="signup">
+            <i class="fa-solid fa-right-to-bracket"></i>
+
+            <h4>Sign Up</h4>
+        </a>
+    </div>
+
+    <div class="divider">
+        <hr>
+    </div>
+</div>
+{% endblock %}

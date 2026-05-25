@@ -1,0 +1,15 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1>Student Log In</h1>
+
+    <form action="/loginregister" method="post">
+        <h2>Username*</h2>
+        <input type="text" name="username" placeholder="Username" required class="login-box">
+        <h2>Password*</h2>
+        <input type="password" name="password" placeholder="Password" required class="login-box">
+        <input type="submit" value="Log in" class="login-submit">
+    </form>
+</div>
+{% endblock %}

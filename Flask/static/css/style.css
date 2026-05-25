@@ -1,0 +1,241 @@
+/* BODY STYLES */
+body {
+    margin: 0;
+    padding: 0;
+    max-width: 100vw;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+header {
+    flex-shrink: 0;
+}
+
+main {
+    flex: 1;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* HEADER STYLES */
+.header {
+    background-color: #004E42;
+    max-width: 100vw;
+    padding: 1vw 4vw 1vw 4vw;
+    display: flex;
+    flex-direction: row;
+}
+
+.header h1 {
+    color: black;
+    filter: invert(1);
+    font-family: comfortaa;
+    font-weight: bold;
+    font-size: 1.25vw;
+    margin: auto 0 auto 0;
+    padding: 1vw 1vw 1vw 0;
+    cursor: pointer;
+}
+
+.header i {
+    transition-duration: 0.3s;
+}
+
+.header h1:hover i {
+    transform: rotate(90deg)
+}
+
+.header a {
+    display: flex;
+    flex-direction: row;
+    margin: 0 0 0 auto;
+}
+
+.header img {
+    width: 6vw;
+}
+
+.header h2 {
+    color: white;
+    padding-top: auto;
+    font-family: oswald;
+    font-weight: normal;
+    font-size: 1.25vw;
+    margin: auto 0 1vw 0;
+}
+
+/* POPUP MENU STYLES */
+.menu {
+    background-color: #ffffff;
+    height: 100vh;
+    width: 20vw;
+    display: flex;
+    flex-direction: column;
+    padding: 2vw 0 2vw 0;
+    position: fixed;
+}
+
+.menu a {
+    color: #004E42;
+    padding: 0 0 0 4vw;
+    font-family: comfortaa;
+    font-weight: bold;
+    font-size: 1.25vw;
+    margin: 0.5vw 0 0.5vw 0;
+}
+
+/* FOOTER STYLES */
+.footer {
+    display: flex;
+    flex-direction: row;
+    background-image: url(../images/footer-background.jpg);
+    margin: auto 0 0 0;
+}
+
+.footer img {
+    width: 8vw;
+    margin: 4vw 0 4vw 4vw;
+}
+
+.footer h1 {
+    color: white;
+    font-family: oswald;
+    font-weight: bold;
+    font-size: 1.5vw;
+    margin: auto 0 auto 0;
+    padding: 1vw 1vw 1vw 0;
+}
+
+/* HOME STYLES */
+.home {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.home div {
+    background-color: white;
+}
+
+.home .hero {
+    grid-column: span 2;
+    background-image: url(../images/home-hero.jpg);
+    text-align: center;
+
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.about img {
+    width: 32vw;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    margin: 4vw 16vw 0 2vw;
+    border-radius: 1vw;
+}
+
+.home h1 {
+    color: white;
+    font-family: oswald;
+    font-weight: bold;
+    font-size: 6vw;
+    margin: 14vw 0 14vw 0;
+}
+
+.home h2 {
+    color: #00AB8E;
+    font-family: raleway;
+    font-weight: bolder;
+    font-size: 2vw;
+    margin: 4vw 2vw 0 16vw;
+}
+
+.home h3 {
+    color: black;
+    font-family: comfortaa;
+    font-size: 1.2vw;
+    margin: 1vw 2vw 0 16vw;
+}
+
+.divider {
+    grid-column: span 2;
+    margin: 2vw 0 2vw 0;
+}
+
+.home hr {
+    width: 68vw;
+    height: 0.05vw;
+    background-color: #00AB8E;
+}
+
+.buttons {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin: 0 16vw 0 16vw;
+    justify-items: center;
+}
+
+.buttons a {
+    height: 13vw;
+    width: 13vw;
+    padding: 3vw;
+    text-align: center;
+    background-color: #00AB8E;
+    border-radius: 1vw;
+    transition-duration: 0.3s;
+}
+
+.home a:hover {
+    background-color: #004E42;
+}
+
+.buttons a .student-login {
+    margin: 0 6vw 0 0;
+}
+
+.buttons a .teacher-login {
+    margin: 0 0 0 0;
+}
+
+.buttons a .signup {
+    margin: 0 0 0 6vw;
+}
+
+.buttons i {
+    color: black;
+    font-size: 10vw;
+}
+
+.buttons h4 {
+    color: black;
+    font-family: comfortaa;
+    font-size: 1.5vw;
+}
+
+/** STUDENT LOGIN STYLES **/
+.login {
+    background-image: url(../images/login-background.png);
+    background-size: cover;
+    margin: 4vw 20vw 4vw 20vw;
+    padding: 2vw;
+    border-radius: 4vw 0 4vw 0;
+}
+
+.login h1 {
+    font-family: comfortaa;
+    font-size: 2vw;
+    color: white;
+}
+
+.login h2 {
+    font-family: raleway;
+    font-size: 1.5vw;
+    color: white;
+}

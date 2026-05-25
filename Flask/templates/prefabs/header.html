@@ -1,0 +1,40 @@
+<div class="header">
+    <h1 onclick="MenuToggle()">
+        Menu
+        <i class="fa-solid fa-arrow-right"></i>
+    </h1>
+    
+    <a href="{{ url_for('home') }}">
+        <img src="/static/images/header-icon.png" alt="BHS icon">
+        <h2>
+            Burnside High School
+            <br>
+            Study Checker
+        </h2>
+    </a>
+</div>
+
+<div class="menu hidden" id="menu">
+    <a>Home</a>
+    <a>Login</a>
+    <a>Sign up</a>
+</div>
+
+<script>
+    function MenuToggle() {
+        const menu = document.getElementById('menu');
+        menu.classList.toggle('hidden');
+        
+        if (menu.classList.contains('hidden')) {
+            document.body.style.overflow = 'auto';
+        } else {
+            document.body.style.overflow = 'hidden';
+        }
+    }
+</script>
+
+<style>
+    .menu.hidden {
+        display: none;
+    }
+</style>
