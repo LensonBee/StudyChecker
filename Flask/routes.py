@@ -28,10 +28,21 @@ def home():
     return render_template("home.html", title="Home")
 
 
+@app.route("/teacher-login")
+def teacher_login():
+    if "teacher" not in session:  # instantiate session
+        session["teacher"] = False
+
+    if session.get("teacher"):
+        return app.redirect("/")
+
+    return render_template("teacher-login.html", title="Teacher Login")
+
+
 @app.route("/student-login")
 def student_login():
     if "student" not in session:  # instantiate session
-        session["sutdent"] = False
+        session["student"] = False
 
     if session.get("student"):
         return app.redirect("/")

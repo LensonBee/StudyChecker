@@ -1,0 +1,14 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1><i class="fa-solid fa-user"></i> Teacher Log In</h1>
+    <h2>Manage students and check Study Periods</h2>
+
+    <form action="/loginregister" method="post">
+        <input type="text" name="username" placeholder="Username" required class="login-box">
+        <input type="password" name="password" placeholder="Password" required class="login-box">
+        <input type="submit" value="Log in" class="login-submit">
+    </form>
+</div>
+{% endblock %}

@@ -239,3 +239,7 @@ a {
     font-size: 1.5vw;
     color: white;
 }
+
+.login login-box {
+    padding: 1vw;
+}
