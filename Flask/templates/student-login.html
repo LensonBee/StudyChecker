@@ -2,14 +2,18 @@
 
 {% block content %}
 <div class="login">
-    <h1>Student Log In</h1>
+    <h1><i class="fa-solid fa-user"></i> Student Log In</h1>
+    <h2>Sign into period 1 study</h2>
 
-    <form action="/loginregister" method="post">
-        <h2>Username*</h2>
+    <form action="/teacher-loginregister" method="post">
         <input type="text" name="username" placeholder="Username" required class="login-box">
-        <h2>Password*</h2>
+        <br>
         <input type="password" name="password" placeholder="Password" required class="login-box">
+        <br>
         <input type="submit" value="Log in" class="login-submit">
     </form>
+
+    <hr>
+    <h2>Don't have an account yet? Sign up</h2>
 </div>
 {% endblock %}

@@ -2,13 +2,18 @@
 
 {% block content %}
 <div class="login">
-    <h1><i class="fa-solid fa-user"></i> Teacher Log In</h1>
-    <h2>Manage students and check Study Periods</h2>
+    <h1><i class="fa-solid fa-user"></i>Teacher Log In</h1>
+    <h2>Manage students and check study period attendance</h2>
 
-    <form action="/loginregister" method="post">
+    <form action="/teacher-loginregister" method="post">
         <input type="text" name="username" placeholder="Username" required class="login-box">
+        <br>
         <input type="password" name="password" placeholder="Password" required class="login-box">
+        <br>
         <input type="submit" value="Log in" class="login-submit">
     </form>
+
+    <hr>
+    <h2>To get a teacher account set up, send an Email</h2>
 </div>
 {% endblock %}
