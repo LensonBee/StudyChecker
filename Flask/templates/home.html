@@ -26,28 +26,21 @@
         <hr>
     </div>
 
+    <!-- show login/signup buttons if user is not signed in -->
+    {% if not (session["teacher"] or session["student"]) %}
     <div class="buttons">
         <a class="student-login" href="{{ url_for('student_login') }}">
-            <i class="fa-solid fa-user-graduate"></i>
-
             <h4>Student Login</h4>
         </a>
 
         <a class="teacher-login" href="{{ url_for('teacher_login') }}">
-            <i class="fa-solid fa-chalkboard-user"></i>
-            
             <h4>Teacher Login</h4>
-        </a>
-
-        <a class="signup">
-            <i class="fa-solid fa-right-to-bracket"></i>
-
-            <h4>Sign Up</h4>
         </a>
     </div>
 
     <div class="divider">
         <hr>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

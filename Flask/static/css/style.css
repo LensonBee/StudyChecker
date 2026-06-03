@@ -185,34 +185,16 @@ a {
 }
 
 .buttons a {
-    height: 13vw;
-    width: 13vw;
+    height: 12vw;
+    width: 20vw;
     padding: 3vw;
     text-align: center;
-    background-color: #00AB8E;
     border-radius: 1vw;
     transition-duration: 0.3s;
 }
 
 .home a:hover {
     background-color: #004E42;
-}
-
-.buttons a .student-login {
-    margin: 0 6vw 0 0;
-}
-
-.buttons a .teacher-login {
-    margin: 0 0 0 0;
-}
-
-.buttons a .signup {
-    margin: 0 0 0 6vw;
-}
-
-.buttons i {
-    color: black;
-    font-size: 10vw;
 }
 
 .buttons h4 {

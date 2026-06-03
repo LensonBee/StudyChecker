@@ -19,8 +19,8 @@ class Base(DeclarativeBase):
 class Students(Base):
     __tablename__ = "students"
     id : Mapped[int] = mapped_column(primary_key=True)
+    code : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
-    form : Mapped[str] = mapped_column(String())
 
 
 class Admins(Base):
@@ -43,8 +43,6 @@ def teacher_login():
 
     if session.get("teacher"):
         return app.redirect("/")
-    
-
 
     return render_template("teacher-login.html", title="Teacher Login")
 
@@ -60,8 +58,7 @@ def teacherloginregister():
     
     if check_password_hash(user.password, password):
         session["teacher"] = True
-        session.get("teacher")
-        return app.redirect("/teacher-login")
+        return app.redirect("/")
     else:
         return app.redirect("/teacher-login")
 
@@ -74,6 +71,32 @@ def student_login():
         return app.redirect("/")
 
     return render_template("student-login.html", title="Student Login")
+
+
+@app.route("/student-loginregister", methods=["GET", "POST"])
+def studentloginregister():
+    code = request.form.get("username")
+    password = request.form.get("password")
+
+    user = db.session().execute(select(Students).where(Students.code == code)).scalar_one_or_none()
+    if not user:
+        return app.redirect("/student-login")
+    
+    if check_password_hash(user.password, password):
+        session["student"] = True
+        return app.redirect("/")
+    else:
+        return app.redirect("/student-login")
+
+
+@app.route("/signout")
+def sign_out():
+    if session["teacher"]:
+        session["teacher"] = False
+    if session["student"]:
+        session["student"] = False
+
+    return app.redirect("/")
 
 
 if __name__ == "__main__":
