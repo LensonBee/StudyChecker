@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort, session, request
+from flask import Flask, render_template, abort, session, request, flash
 import sqlite3
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -20,6 +20,7 @@ class Students(Base):
     __tablename__ = "students"
     id : Mapped[int] = mapped_column(primary_key=True)
     code : Mapped[str] = mapped_column(String())
+    name : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
 
 
@@ -36,10 +37,23 @@ def home():
     return render_template("home.html", title="Home")
 
 
+@app.route("/list")
+def list():
+    students = db.session().execute(select(Students)).scalars()
+    return render_template(
+        "list.html",
+        title="Student List",
+        students=students
+    )
+
+
 @app.route("/teacher-login")
 def teacher_login():
     if "teacher" not in session:  # instantiate session
         session["teacher"] = False
+
+    if "fail" not in session:
+        session["fail"] = False
 
     if session.get("teacher"):
         return app.redirect("/")
@@ -54,18 +68,24 @@ def teacherloginregister():
 
     user = db.session().execute(select(Admins).where(Admins.code == code)).scalar_one_or_none()
     if not user:
+        flash("User does not exist.")
         return app.redirect("/teacher-login")
     
     if check_password_hash(user.password, password):
         session["teacher"] = True
         return app.redirect("/")
     else:
+        flash("Incorrect password.")
         return app.redirect("/teacher-login")
+
 
 @app.route("/student-login")
 def student_login():
     if "student" not in session:  # instantiate session
         session["student"] = False
+
+    if "fail" not in session:
+        session["fail"] = False
 
     if session.get("student"):
         return app.redirect("/")
@@ -80,23 +100,27 @@ def studentloginregister():
 
     user = db.session().execute(select(Students).where(Students.code == code)).scalar_one_or_none()
     if not user:
+        flash("User does not exist.")
         return app.redirect("/student-login")
     
     if check_password_hash(user.password, password):
         session["student"] = True
         return app.redirect("/")
     else:
+        flash("Incorrect password.")
         return app.redirect("/student-login")
 
 
-@app.route("/signout")
+@app.route("/sign-out")
 def sign_out():
-    if session["teacher"]:
-        session["teacher"] = False
-    if session["student"]:
-        session["student"] = False
-
+    session.pop("teacher", None)
+    session.pop("student", None)
     return app.redirect("/")
+
+
+@app.route("/check-in")
+def check_in():
+    return render_template("check-in.html", title="Check-in")
 
 
 if __name__ == "__main__":

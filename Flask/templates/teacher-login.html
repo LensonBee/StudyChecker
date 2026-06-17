@@ -3,7 +3,17 @@
 {% block content %}
 <div class="login">
     <h1><i class="fa-solid fa-user"></i> Teacher Log In</h1>
-    <h2>Manage students and check study period attendance</h2>
+    
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+                {% for message in messages %}
+                    <h3>*{{ message }}</h3>
+                {% endfor %}
+        {% else %}
+            <h2>Manage students and check study period attendance</h2>
+        {% endif %}
+    {% endwith %}
 
     <form action="/teacher-loginregister" method="post">
         <input type="text" name="username" placeholder="Username" required class="login-box">

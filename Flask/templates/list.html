@@ -1,0 +1,14 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="list">
+    {% for student in students %}
+        <div>
+            <h1>
+                <i class="fa-solid fa-user"></i>
+                {{ student.name }}
+            </h1>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

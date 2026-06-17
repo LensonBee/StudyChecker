@@ -30,10 +30,12 @@
     {% if not (session["teacher"] or session["student"]) %}
     <div class="buttons">
         <a class="student-login" href="{{ url_for('student_login') }}">
+            <i class="fa-solid fa-graduation-cap"></i>
             <h4>Student Login</h4>
         </a>
 
         <a class="teacher-login" href="{{ url_for('teacher_login') }}">
+            <i class="fa-solid fa-school"></i>
             <h4>Teacher Login</h4>
         </a>
     </div>

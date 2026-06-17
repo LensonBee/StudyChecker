@@ -1,0 +1,15 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1><i class="fa-solid fa-user"></i> Check-in</h1>
+    <h2>Lorem ppipsum dolor type sh.</h2>
+
+    <form action="/check-in" method="post">
+        <input type="submit" value="Log in" class="checkin-submit">
+    </form>
+
+    <hr>
+    <h2>*You must be connected to school Wifi to check in.</h2>
+</div>
+{% endblock %}

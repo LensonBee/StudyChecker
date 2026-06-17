@@ -179,26 +179,40 @@ a {
 .buttons {
     grid-column: span 2;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    margin: 0 16vw 0 16vw;
+    grid-template-columns: 1fr 1fr;
     justify-items: center;
 }
 
 .buttons a {
     height: 12vw;
-    width: 20vw;
+    width: 24vw;
     padding: 3vw;
     text-align: center;
-    border-radius: 1vw;
     transition-duration: 0.3s;
+
+    color: white;
+    background-color: #00AB8E;
 }
 
-.home a:hover {
+.buttons a:hover {
     background-color: #004E42;
 }
 
+.buttons .student-login {
+    margin: 0 2vw 0 auto;
+    border-radius: 0 0 0 2vw;
+}
+
+.buttons .teacher-login {
+    margin: 0 auto 0 2vw;
+    border-radius: 0 0 2vw 0;
+}
+
+.buttons i {
+    font-size: 4vw;
+}
+
 .buttons h4 {
-    color: black;
     font-family: comfortaa;
     font-size: 1.5vw;
 }
@@ -226,10 +240,17 @@ a {
     margin: 0 0 2vw 0;
 }
 
+.login h3 {
+    font-family: raleway;
+    font-size: 1.5vw;
+    color: lightcoral;
+    margin: 0 0 2vw 0;
+}
+
 .login .login-box {
     padding: 1vw;
     margin: 0 0 2vw 0;
-    min-width: 30vw;
+    width: 30vw;
 
     font-family: raleway;
 }
@@ -247,7 +268,51 @@ a {
     background-color: #00AB8E;
 }
 
+.login .checkin-submit {
+    height: 10vw;
+    width: 40vw;
+    border-radius: 2vw;
+    border-width: 0;
+
+    text-align: center;
+    font-family: raleway;
+    transition-duration: 0.3s;
+}
+
+.login .checkin-submit:hover {
+    background-color: #00AB8E;
+}
+
 .login hr {
     max-width: 40vw;
     margin: 2vw 0 1vw 0;
+}
+
+/* LIST STYLES */
+.list {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 4vw 10vw 4vw 10vw;
+
+    background-image: url(../images/home-hero.jpg);
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.list div {
+    background-color: white;
+    padding: 0 0 0 1vw;
+    transition-duration: 0.3s;
+}
+
+.list div:hover {
+    background-color: lightgrey;
+}
+
+.list h1 {
+    font-family: raleway;
+    font-size: 2vw;
+    color: black;
 }

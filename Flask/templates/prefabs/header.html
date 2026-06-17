@@ -21,10 +21,19 @@
     {% if not (session["teacher"] or session["student"]) %}
         <a href="{{ url_for('student_login') }}">Student Login</a>
         <a href="{{ url_for('teacher_login') }}">Teacher Login</a>
-        <a>Sign up</a>
     {% endif %}
 
-    <!-- Display if user is logged in -->
+    <!-- Display if teacher is logged in -->
+    {% if session["teacher"] %}
+        <a href="{{ url_for('list') }}">Student List</a>
+    {% endif %}
+
+    <!-- Display if student is logged in -->
+    {% if session["student"] %}
+        <a href="{{ url_for('check_in') }}">Check-in</a>
+    {% endif %}
+
+    <!-- Display if any user is logged in -->
     {% if (session["teacher"] or session["student"]) %}
         <a href="{{ url_for('sign_out') }}">Sign Out</a>
     {% endif %}
@@ -32,6 +41,7 @@
 
 <script>
     function MenuToggle() {
+        window.scrollTo({ top: 0 });
         const menu = document.getElementById('menu');
         menu.classList.toggle('hidden');
         
