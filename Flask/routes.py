@@ -1,5 +1,6 @@
 from flask import Flask, render_template, abort, session, request, flash
 import sqlite3
+import subprocess
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values
@@ -22,6 +23,7 @@ class Students(Base):
     code : Mapped[str] = mapped_column(String())
     name : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
+    check : Mapped[int] = mapped_column(Integer())
 
 
 class Admins(Base):
@@ -52,9 +54,6 @@ def teacher_login():
     if "teacher" not in session:  # instantiate session
         session["teacher"] = False
 
-    if "fail" not in session:
-        session["fail"] = False
-
     if session.get("teacher"):
         return app.redirect("/")
 
@@ -72,7 +71,7 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
     
     if check_password_hash(user.password, password):
-        session["teacher"] = True
+        session["teacher"] = user.code
         return app.redirect("/")
     else:
         flash("Incorrect password.")
@@ -83,9 +82,6 @@ def teacherloginregister():
 def student_login():
     if "student" not in session:  # instantiate session
         session["student"] = False
-
-    if "fail" not in session:
-        session["fail"] = False
 
     if session.get("student"):
         return app.redirect("/")
@@ -104,7 +100,7 @@ def studentloginregister():
         return app.redirect("/student-login")
     
     if check_password_hash(user.password, password):
-        session["student"] = True
+        session["student"] = user.code
         return app.redirect("/")
     else:
         flash("Incorrect password.")
@@ -121,6 +117,22 @@ def sign_out():
 @app.route("/check-in")
 def check_in():
     return render_template("check-in.html", title="Check-in")
+
+
+@app.route("/check-register", methods=["GET", "POST"])
+def checkinregister():
+    wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
+    data = wifi.decode('utf-8')
+    
+    # Extract WiFi network name (SSID)
+    for line in data.split('\n'):
+        if 'SSID' in line:
+            network_name = line.split(':')[1].strip()
+            print(f"Connected to WiFi: {network_name}")
+            break
+
+    db.session().execute(update(Students).where(Students.code == session["student"]).values(check=1))
+    return app.redirect("/check-in")
 
 
 if __name__ == "__main__":

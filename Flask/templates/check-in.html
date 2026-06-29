@@ -3,9 +3,17 @@
 {% block content %}
 <div class="login">
     <h1><i class="fa-solid fa-user"></i> Check-in</h1>
-    <h2>Lorem ppipsum dolor type sh.</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+                {% for message in messages %}
+                    <h3>*{{ message }}</h3>
+                {% endfor %}
+        {% else %}
+            <h2>Check-in for period 1.</h2>
+        {% endif %}
+    {% endwith %}
 
-    <form action="/check-in" method="post">
+    <form action="/check-registers" method="post">
         <input type="submit" value="Log in" class="checkin-submit">
     </form>
 
