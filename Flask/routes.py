@@ -64,6 +64,10 @@ def teacher_login():
 def teacherloginregister():
     code = request.form.get("username")
     password = request.form.get("password")
+    # check for character limit
+    if len(code) > 100 or len(password) > 100:
+        flash("Too many characters entered.")
+        return app.redirect("/teacher-login")
 
     user = db.session().execute(select(Admins).where(Admins.code == code)).scalar_one_or_none()
     if not user:
@@ -93,6 +97,9 @@ def student_login():
 def studentloginregister():
     code = request.form.get("username")
     password = request.form.get("password")
+    if len(code) > 100 or len(password) > 100:
+        flash("Too many characters entered.")
+        return app.redirect("/student-login")
 
     user = db.session().execute(select(Students).where(Students.code == code)).scalar_one_or_none()
     if not user:
@@ -123,16 +130,32 @@ def check_in():
 def checkinregister():
     wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
     data = wifi.decode('utf-8')
+    network_name = str()
     
     # Extract WiFi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:
             network_name = line.split(':')[1].strip()
-            print(f"Connected to WiFi: {network_name}")
+            flash(f"Connected to: {network_name}")
             break
+    
+    # Check if network name was extracted
+    if not network_name:
+        flash("Not connected to any network.")
+
 
     db.session().execute(update(Students).where(Students.code == session["student"]).values(check=1))
     return app.redirect("/check-in")
+
+
+# error handling
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("error.html", title="Error", error=error), 404
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template("error.html", title="Error", error=error), 500
 
 
 if __name__ == "__main__":

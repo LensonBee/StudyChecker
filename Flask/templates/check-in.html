@@ -6,15 +6,15 @@
     {% with messages = get_flashed_messages() %}
         {% if messages %}
                 {% for message in messages %}
-                    <h3>*{{ message }}</h3>
+                    <h3>{{ message }}</h3>
                 {% endfor %}
         {% else %}
             <h2>Check-in for period 1.</h2>
         {% endif %}
     {% endwith %}
 
-    <form action="/check-registers" method="post">
-        <input type="submit" value="Log in" class="checkin-submit">
+    <form action="/check-register" method="post">
+        <input type="submit" value="Check In" class="checkin-submit">
     </form>
 
     <hr>
