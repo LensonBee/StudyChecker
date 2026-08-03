@@ -3,6 +3,21 @@
         Menu
         <i class="fa-solid fa-arrow-right"></i>
     </h1>
+
+    {% if session["teacher"] %}
+        <h3>
+            <i class="fa-solid fa-user"></i>
+            Logged in as {{ session["teacher"] }}
+        </h3>
+    {% endif %}
+
+    <!-- Display if student is logged in -->
+    {% if session["student"] %}
+        <h3>
+            <i class="fa-solid fa-user"></i>
+            Logged in as {{ session["student"] }}
+        </h3>
+    {% endif %}
     
     <a href="{{ url_for('home') }}">
         <img src="/static/images/header-icon.png" alt="BHS icon">

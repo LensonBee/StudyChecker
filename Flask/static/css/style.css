@@ -67,6 +67,15 @@ a {
     margin: auto 0 auto 0;
 }
 
+.header h3 {
+    color: white;
+    font-family: comfortaa;
+    font-weight: bold;
+    font-size: 1.25vw;
+    margin: auto 0 auto 4vw;
+    cursor: pointer;
+}
+
 /* POPUP MENU STYLES */
 .menu {
     background-color: #ffffff;

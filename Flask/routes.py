@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values
 from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime, date
 
 app = Flask(__name__)
 DATABASE = "study.db"
@@ -23,8 +24,6 @@ class Students(Base):
     code : Mapped[str] = mapped_column(String())
     name : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
-    check : Mapped[int] = mapped_column(Integer())
-
 
 class Admins(Base):
     __tablename__ = "admins"
@@ -32,14 +31,20 @@ class Admins(Base):
     code : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
 
+class Calendar(Base):
+    __tablename__ = "calendar"
+    id : Mapped[int] = mapped_column(primary_key=True)
+    date : Mapped[str] = mapped_column(String())
+    student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
+    student : Mapped["Students"] = relationship()
+
 
 # GENERAL ROUTES
-@app.route("/")
+@app.route("/")     # home page
 def home():
     return render_template("home.html", title="Home")
 
-
-@app.route("/list")
+@app.route("/list")     # students list for teachers
 def list():
     students = db.session().execute(select(Students)).scalars()
     return render_template(
@@ -49,7 +54,7 @@ def list():
     )
 
 
-@app.route("/teacher-login")
+@app.route("/teacher-login")    # teacher login page
 def teacher_login():
     if "teacher" not in session:  # instantiate session
         session["teacher"] = False
@@ -82,7 +87,7 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
 
 
-@app.route("/student-login")
+@app.route("/student-login")       # student login page
 def student_login():
     if "student" not in session:  # instantiate session
         session["student"] = False
@@ -114,14 +119,14 @@ def studentloginregister():
         return app.redirect("/student-login")
 
 
-@app.route("/sign-out")
+@app.route("/sign-out")     # removes student/teacher sessions
 def sign_out():
     session.pop("teacher", None)
     session.pop("student", None)
     return app.redirect("/")
 
 
-@app.route("/check-in")
+@app.route("/check-in")     # check-in for students
 def check_in():
     return render_template("check-in.html", title="Check-in")
 
@@ -131,6 +136,9 @@ def checkinregister():
     wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
     data = wifi.decode('utf-8')
     network_name = str()
+    current_time = date.today()
+
+    print(current_time)
     
     # Extract WiFi network name (SSID)
     for line in data.split('\n'):
@@ -144,7 +152,6 @@ def checkinregister():
         flash("Not connected to any network.")
 
 
-    db.session().execute(update(Students).where(Students.code == session["student"]).values(check=1))
     return app.redirect("/check-in")
 
 
