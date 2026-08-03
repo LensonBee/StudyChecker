@@ -1,35 +1,18 @@
-from flask import Flask, render_template, abort, session, request, flash, url_for
+from flask import Flask, render_template, abort, session, request, flash
 import sqlite3
 import subprocess
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values
 from werkzeug.security import check_password_hash, generate_password_hash
-from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
 DATABASE = "study.db"
 
 # in routes.py
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///study.db"
-app.config["GOOGLE_CLIENT_ID"] = "263142839019-j7p2ibefe1sm3vp1434dcr9m86butc3s.apps.googleusercontent.com"
-app.config["GOOGLE_CLIENT_SECRET"] = "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"
-app.secret_key = "tGmesA3v77abYK3Y1UkUMlWJny6KAA"
-
 db = SQLAlchemy(app)
-oauth = OAuth(app)
-
-
-google = oauth.register(
-    name="google",
-    client_id=app.config["GOOGLE_CLIENT_ID"],
-    client_secret=app.config["GOOGLE_CLIENT_SECRET"],
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_kwargs={
-        "scope": "openid email profile"
-    }
-)
-
+app.secret_key = "tGmesA3v77abYK3Y1UkUMlWJny6KAA"
 
 class Base(DeclarativeBase):
     pass
@@ -39,7 +22,8 @@ class Students(Base):
     id : Mapped[int] = mapped_column(primary_key=True)
     code : Mapped[str] = mapped_column(String())
     name : Mapped[str] = mapped_column(String())
-    email : Mapped[str] = mapped_column(String())
+    password : Mapped[str] = mapped_column(String())
+    check : Mapped[int] = mapped_column(Integer())
 
 
 class Admins(Base):
@@ -99,37 +83,35 @@ def teacherloginregister():
 
 
 @app.route("/student-login")
-@app.route("/student-login")
 def student_login():
-    redirect_uri = url_for("google_callback", _external=True)
-    print(redirect_uri)
-    return google.authorize_redirect(redirect_uri)
+    if "student" not in session:  # instantiate session
+        session["student"] = False
+
+    if session.get("student"):
+        return app.redirect("/")
+
+    return render_template("student-login.html", title="Student Login")
 
 
-@app.route("/auth/google/callback")
-def google_callback():
-    token = google.authorize_access_token()
-    user = token["userinfo"]
-
-    email = user["email"]
-    name = user["name"]
-
-    # check if email is from burnside
-    if not email.endswith("@burnside.school.nz"):
-        flash("Please use your school Google account.")
+@app.route("/student-loginregister", methods=["GET", "POST"])
+def studentloginregister():
+    code = request.form.get("username")
+    password = request.form.get("password")
+    if len(code) > 100 or len(password) > 100:
+        flash("Too many characters entered.")
         return app.redirect("/student-login")
 
-    student = db.session.execute(
-        select(Students).where(Students.email == email)
-    ).scalar_one_or_none()
-
-    if student is None:
-        flash("No student account found.")
+    user = db.session().execute(select(Students).where(Students.code == code)).scalar_one_or_none()
+    if not user:
+        flash("User does not exist.")
         return app.redirect("/student-login")
-
-    session["student"] = student.code
-
-    return app.redirect("/")
+    
+    if check_password_hash(user.password, password):
+        session["student"] = user.code
+        return app.redirect("/")
+    else:
+        flash("Incorrect password.")
+        return app.redirect("/student-login")
 
 
 @app.route("/sign-out")
@@ -154,10 +136,7 @@ def checkinregister():
     for line in data.split('\n'):
         if 'SSID' in line:
             network_name = line.split(':')[1].strip()
-            if network_name == "BHS_BYOD_alt":      # Connected to school Wifi
-                flash(f"Logged into: {network_name}")
-            else:                                   # Connected but not correct network
-                flash("Please connect to school Wifi")
+            flash(f"Connected to: {network_name}")
             break
     
     # Check if network name was extracted
