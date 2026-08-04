@@ -46,6 +46,10 @@ def home():
 
 @app.route("/list")     # students list for teachers
 def list():
+    # catch non-teacher account users
+    if "teacher" not in session or not session["teacher"]:
+        abort(401)
+    
     students = db.session().execute(select(Students)).scalars()
     return render_template(
         "list.html",
@@ -80,7 +84,9 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
     
     if check_password_hash(user.password, password):
-        session["teacher"] = user.code
+        # set student id and name
+        session["teacher"] = user.id
+        session["name"] = user.code
         return app.redirect("/")
     else:
         flash("Incorrect password.")
@@ -112,7 +118,9 @@ def studentloginregister():
         return app.redirect("/student-login")
     
     if check_password_hash(user.password, password):
-        session["student"] = user.code
+        # set student id and name
+        session["student"] = user.id
+        session["name"] = user.name
         return app.redirect("/")
     else:
         flash("Incorrect password.")
@@ -123,11 +131,15 @@ def studentloginregister():
 def sign_out():
     session.pop("teacher", None)
     session.pop("student", None)
+    session.pop("name", None)
     return app.redirect("/")
 
 
 @app.route("/check-in")     # check-in for students
 def check_in():
+    if "student" not in session or not session["student"]:
+            abort(401)
+
     return render_template("check-in.html", title="Check-in")
 
 
@@ -136,10 +148,8 @@ def checkinregister():
     wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
     data = wifi.decode('utf-8')
     network_name = str()
-    current_time = date.today()
-
-    print(current_time)
-    
+    current_date = date.today()
+    user_id = session["student"]
     # Extract WiFi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:
@@ -151,18 +161,24 @@ def checkinregister():
     if not network_name:
         flash("Not connected to any network.")
 
-
+    db.session().add(Calendar(date=current_date, student_id=user_id))
+    db.session().commit()
+    
     return app.redirect("/check-in")
 
 
 # error handling
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template("error.html", title="Error", error=error), 404
+    return render_template("error.html", title="Page Not Found", error=error), 404
 
 @app.errorhandler(500)
 def internal_server_error(error):
-    return render_template("error.html", title="Error", error=error), 500
+    return render_template("error.html", title="Internal Server Error", error=error), 500
+
+@app.errorhandler(401)
+def session_not_found(error):
+    return render_template("error.html", title="Unauthorised", error=error), 401
 
 
 if __name__ == "__main__":
