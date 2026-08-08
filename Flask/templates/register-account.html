@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="login">
-    <h1><i class="fa-solid fa-user"></i> Teacher Log In</h1>
+    <h1><i class="fa-solid fa-user"></i> Register Account</h1>
     
 
     {% with messages = get_flashed_messages() %}
@@ -11,12 +11,14 @@
                     <h3>*{{ message }}</h3>
                 {% endfor %}
         {% else %}
-            <h2>Manage students and check study period attendance</h2>
+            <h2>Register your student account.</h2>
         {% endif %}
     {% endwith %}
 
-    <form action="/teacher-loginregister" method="post">
-        <input type="text" name="username" placeholder="Teacher Code" required class="login-box">
+    <form action="register-account" method="post">
+        <input type="text" name="username" placeholder="Email Address" required class="login-box">
+        <br>
+        <input type="text" name="username" placeholder="Student Number" required class="login-box">
         <br>
         <input type="password" name="password" placeholder="Password" required class="login-box">
         <br>
@@ -24,6 +26,6 @@
     </form>
 
     <hr>
-    <h2>To get a teacher account set up, send an Email to 22354@burnside.school.nz</h2>
+    <h2>You must use a school email account.</h2>
 </div>
 {% endblock %}

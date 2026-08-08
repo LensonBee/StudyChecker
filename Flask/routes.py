@@ -1,19 +1,36 @@
-from flask import Flask, render_template, abort, session, request, flash
+from flask import Flask, render_template, abort, session, request, flash, url_for
 import sqlite3
 import subprocess
+import requests
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, date
+from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
 DATABASE = "study.db"
 
 # in routes.py
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///study.db"
-db = SQLAlchemy(app)
 app.secret_key = "tGmesA3v77abYK3Y1UkUMlWJny6KAA"
+app.config["GOOGLE_CLIENT_ID"] = "263142839019-j7p2ibefe1sm3vp1434dcr9m86butc3s.apps.googleusercontent.com"
+app.config["GOOGLE_CLIENT_SECRET"] = "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"
+
+db = SQLAlchemy(app)
+oauth = OAuth(app)
+
+
+google = oauth.register(
+    name="google",
+    client_id=app.config["GOOGLE_CLIENT_ID"],
+    client_secret=app.config["GOOGLE_CLIENT_SECRET"],
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={
+        "scope": "openid email profile"
+    }
+)
 
 class Base(DeclarativeBase):
     pass
@@ -95,36 +112,39 @@ def teacherloginregister():
 
 @app.route("/student-login")       # student login page
 def student_login():
-    if "student" not in session:  # instantiate session
-        session["student"] = False
+    # check if user is already logged in
+    account_check = session.get("student")
+    if account_check:
+        app.redirect("/")
+    # send user to google login
+    redirect_uri = url_for("google_callback", _external=True)
+    return google.authorize_redirect(redirect_uri)
 
-    if session.get("student"):
-        return app.redirect("/")
 
-    return render_template("student-login.html", title="Student Login")
+@app.route("/auth/google/callback")
+def google_callback():
+    token = google.authorize_access_token()
+    user = token["userinfo"]
 
+    email = user["email"]
+    name = user["name"]
 
-@app.route("/student-loginregister", methods=["GET", "POST"])
-def studentloginregister():
-    code = request.form.get("username")
-    password = request.form.get("password")
-    if len(code) > 100 or len(password) > 100:
-        flash("Too many characters entered.")
+    # check if email is from Burnside
+    if not email.endswith("@burnside.school.nz"):
+        flash("Please use your school Google account.")
         return app.redirect("/student-login")
 
-    user = db.session().execute(select(Students).where(Students.code == code)).scalar_one_or_none()
-    if not user:
-        flash("User does not exist.")
+    # get student based on email
+    student = db.session.execute(
+        select(Students).where(Students.email == email)
+    ).scalar_one_or_none()
+
+    if student is None:
+        flash("No student account found.")
         return app.redirect("/student-login")
-    
-    if check_password_hash(user.password, password):
-        # set student id and name
-        session["student"] = user.id
-        session["name"] = user.name
-        return app.redirect("/")
-    else:
-        flash("Incorrect password.")
-        return app.redirect("/student-login")
+
+    session["student"] = student.code
+    return app.redirect("/")
 
 
 @app.route("/sign-out")     # removes student/teacher sessions
@@ -137,10 +157,24 @@ def sign_out():
 
 @app.route("/check-in")     # check-in for students
 def check_in():
+    double_counter = False
+    current_date = date.today()
+
+    # catch users that are not logged in
     if "student" not in session or not session["student"]:
             abort(401)
 
-    return render_template("check-in.html", title="Check-in")
+    # check if user already checked in
+    attendance = db.session().execute(
+        select(Calendar).
+        where(Calendar.student_id == session["student"]).
+        where(Calendar.date == current_date)
+        ).one_or_none()
+    
+    if attendance:
+        double_counter = True
+
+    return render_template("check-in.html", title="Check-in", double_counter=double_counter)
 
 
 @app.route("/check-register", methods=["GET", "POST"])
@@ -150,6 +184,7 @@ def checkinregister():
     network_name = str()
     current_date = date.today()
     user_id = session["student"]
+
     # Extract WiFi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:

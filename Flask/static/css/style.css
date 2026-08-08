@@ -78,6 +78,11 @@ a {
     background-color: #00AB8E;
     padding: 1vw;
     border-radius: 1vw;
+    transition-duration: 0.3s;
+}
+
+.header h3:hover {
+    color: white;
 }
 
 /* POPUP MENU STYLES */
@@ -288,7 +293,8 @@ a {
     border-width: 0;
 
     text-align: center;
-    font-family: raleway;
+    font-family: comfortaa;
+    font-size: 2vw;
     transition-duration: 0.3s;
 }
 
