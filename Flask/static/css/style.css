@@ -309,8 +309,6 @@ a {
 
 /* LIST STYLES */
 .list {
-    display: grid;
-    grid-template-columns: 1fr;
     padding: 4vw 10vw 4vw 10vw;
 
     background-image: url(../images/home-hero.jpg);
@@ -320,13 +318,22 @@ a {
     background-size: cover;
 }
 
-.list div {
+.list .listbox {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 2vw;
+
     background-color: white;
-    padding: 0 0 0 1vw;
+    border-radius: 4vw 0 4vw 0;
+}
+
+.listbox div {
+    padding: 0 0 0 2vw;
+    background-color: white;
     transition-duration: 0.3s;
 }
 
-.list div:hover {
+.listbox div:hover {
     background-color: lightgrey;
 }
 

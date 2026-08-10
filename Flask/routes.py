@@ -57,25 +57,35 @@ class Calendar(Base):
 
 
 # GENERAL ROUTES
-@app.route("/")     # home page
+@app.route("/")     
 def home():
     return render_template("home.html", title="Home")
 
-@app.route("/list")     # students list for teachers
+
+# students list for teachers
+@app.route("/list")
 def list():
-    # catch non-teacher account users
-    if "teacher" not in session or not session["teacher"]:
+    # catch non-teacher accounts
+    if not session.get("teacher"):
         abort(401)
     
     students = db.session().execute(select(Students)).scalars()
-    return render_template(
-        "list.html",
-        title="Student List",
-        students=students
-    )
+    return render_template("list.html", title="Student List", students=students)
 
 
-@app.route("/teacher-login")    # teacher login page
+# attendance/calendar list
+@app.route("/calendar")
+def calendar():
+    # catch non-teacher accounts
+    if not session.get("teacher"):
+        abort(401)
+
+    students = db.session().execute(select(Calendar)).scalars()
+    return render_template("calendar.html", title="Calendar", students=students)
+
+
+# teacher login page
+@app.route("/teacher-login")
 def teacher_login():
     if "teacher" not in session:  # instantiate session
         session["teacher"] = False
@@ -110,19 +120,21 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
 
 
-@app.route("/student-login")       # student login page
+# student login page
+@app.route("/student-login")
 def student_login():
     # check if user is already logged in
-    account_check = session.get("student")
-    if account_check:
+    if not session.get("student"):
         app.redirect("/")
     # send user to google login
     redirect_uri = url_for("google_callback", _external=True)
     return google.authorize_redirect(redirect_uri)
 
 
+# google login functionality
 @app.route("/auth/google/callback")
 def google_callback():
+    # get user information
     token = google.authorize_access_token()
     user = token["userinfo"]
 
@@ -139,6 +151,7 @@ def google_callback():
         select(Students).where(Students.email == email)
     ).scalar_one_or_none()
 
+    # check if student exists
     if student is None:
         flash("No student account found.")
         return app.redirect("/student-login")
@@ -147,7 +160,8 @@ def google_callback():
     return app.redirect("/")
 
 
-@app.route("/sign-out")     # removes student/teacher sessions
+# removes student/teacher sessions
+@app.route("/sign-out")
 def sign_out():
     session.pop("teacher", None)
     session.pop("student", None)
@@ -155,7 +169,8 @@ def sign_out():
     return app.redirect("/")
 
 
-@app.route("/check-in")     # check-in for students
+# student-end attendance
+@app.route("/check-in")
 def check_in():
     double_counter = False
     current_date = date.today()
@@ -170,7 +185,8 @@ def check_in():
         where(Calendar.student_id == session["student"]).
         where(Calendar.date == current_date)
         ).one_or_none()
-    
+
+    # check if user has already checked in
     if attendance:
         double_counter = True
 
@@ -185,14 +201,14 @@ def checkinregister():
     current_date = date.today()
     user_id = session["student"]
 
-    # Extract WiFi network name (SSID)
+    # extract wifi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:
             network_name = line.split(':')[1].strip()
             flash(f"Connected to: {network_name}")
             break
     
-    # Check if network name was extracted
+    # check if network name was extracted
     if not network_name:
         flash("Not connected to any network.")
 
@@ -202,7 +218,7 @@ def checkinregister():
     return app.redirect("/check-in")
 
 
-# error handling
+# ERROR HANDLING
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("error.html", title="Page Not Found", error=error), 404
