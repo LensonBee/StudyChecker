@@ -38,9 +38,8 @@ class Base(DeclarativeBase):
 class Students(Base):
     __tablename__ = "students"
     id : Mapped[int] = mapped_column(primary_key=True)
-    code : Mapped[str] = mapped_column(String())
     name : Mapped[str] = mapped_column(String())
-    password : Mapped[str] = mapped_column(String())
+    email : Mapped[str] = mapped_column(String())
 
 class Admins(Base):
     __tablename__ = "admins"
