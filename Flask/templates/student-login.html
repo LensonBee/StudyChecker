@@ -1,0 +1,28 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1><i class="fa-solid fa-user"></i> Student Log In</h1>
+    
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+                {% for message in messages %}
+                    <h3>*{{ message }}</h3>
+                {% endfor %}
+        {% else %}
+            <h2>Sign in for period 1 attendance.</h2>
+        {% endif %}
+    {% endwith %}
+
+    <a href="{{ url_for('student_loginregister') }}" class="google-submit">
+        <i class="fa-brands fa-google"></i>
+        Sign-in with Google
+    </a>
+
+    <hr>
+    <h2>Don't have an account?
+        <a href="{{ url_for('sign_up') }}" class="login-subtext">Register</a>
+    </h2>
+</div>
+{% endblock %}

@@ -273,6 +273,23 @@ a {
     font-family: raleway;
 }
 
+.login .google-submit {
+    display: inline-block;
+    padding: 2vw;
+    margin: 0 0 1vw 0;
+    border-radius: 1vw;
+    border-width: 0;
+    background-color: white;
+
+    color: black;
+    font-family: raleway;
+    transition-duration: 0.3s;
+}
+
+.login .google-submit:hover {
+    background-color: #00AB8E;
+}
+
 .login .login-submit {
     padding: 1vw;
     border-radius: 1vw;
@@ -286,9 +303,19 @@ a {
     background-color: #00AB8E;
 }
 
+.login .login-subtext {
+    color: lightblue;
+    margin: 0;
+    background-color: none;
+}
+
+.login .login-subtext:hover {
+    text-decoration: underline;
+}
+
 .login .checkin-submit {
     height: 10vw;
-    width: 40vw;
+    width: 30vw;
     border-radius: 2vw;
     border-width: 0;
 
@@ -331,6 +358,7 @@ a {
     padding: 0 0 0 2vw;
     background-color: white;
     transition-duration: 0.3s;
+    border-radius: 2vw;
 }
 
 .listbox div:hover {

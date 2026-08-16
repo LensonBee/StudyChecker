@@ -26,14 +26,15 @@
 
     <!-- Display only if user isn't logged in -->
     {% if not (session["teacher"] or session["student"]) %}
-        <a href="{{ url_for('student_login') }}">Student Login</a>
         <a href="{{ url_for('teacher_login') }}">Teacher Login</a>
+        <a href="{{ url_for('student_login') }}">Student Login</a>
+        <a href="{{ url_for('sign_up') }}">Sign up</a>
     {% endif %}
 
     <!-- Display if teacher is logged in -->
     {% if session["teacher"] %}
-        <a href="{{ url_for('list') }}">Student List</a>
-        <a href="{{ url_for('calendar') }}">Calendar/Attendance</a>
+        <a href="{{ url_for('calendar') }}">Attendance</a>
+        <a href="{{ url_for('calendar') }}">Calendar</a>
     {% endif %}
 
     <!-- Display if student is logged in -->

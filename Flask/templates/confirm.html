@@ -1,0 +1,28 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1><i class="fa-solid fa-user"></i> Email Confirmation</h1>
+    
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+                {% for message in messages %}
+                    <h3>*{{ message }}</h3>
+                {% endfor %}
+        {% else %}
+            <h2>Please check your email for the confirmation code.</h2>
+        {% endif %}
+    {% endwith %}
+
+    <form action="/confirm" method="post">
+        <input type="text" name="confirmation_number" placeholder="Confirmation Code" required class="login-box">
+        <br>
+        <input type="submit" value="Sign Up" class="login-submit">
+    </form>
+
+    <hr>
+    <h2>This code will expire if the web browser is closed.
+    </h2>
+</div>
+{% endblock %}

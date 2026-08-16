@@ -1,0 +1,24 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="list">
+    <div class="listbox">
+        <h1>Attendance for: {{ current_date }}</h1>
+        {% if students %}
+            {% for student in students %}
+                <div>
+                    <h1>
+                        <i class="fa-solid fa-user"></i>
+                        {{ student.student_id }}
+                        {{ student.date }}
+                    </h1>
+                </div>
+            {% endfor %}
+        {% else %}
+                <div>
+                    <h1>No results found.</h1>
+                </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
