@@ -11,10 +11,11 @@ from datetime import datetime, date
 from authlib.integrations.flask_client import OAuth
 import random
 from flask_mail import Mail, Message
-from threading import Thread
 import random
 import os
-import pandas as pd
+import auth
+import csv
+import io
 
 app = Flask(__name__)
 DATABASE = "study.db"
@@ -30,7 +31,6 @@ app.config["GOOGLE_CLIENT_SECRET"] = "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"
 # Telomeres
 db = SQLAlchemy(app)
 oauth = OAuth(app)
-mail = Mail(app)
 
 # Google login
 google = oauth.register(
@@ -43,6 +43,17 @@ google = oauth.register(
     }
 )
 
+# Mail setup
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USE_SSL"] = False
+app.config["MAIL_USERNAME"] = auth.sender_email
+app.config["MAIL_PASSWORD"] = auth.sender_password
+app.config["MAIL_DEFAULT_SENDER"] = auth.sender_email
+
+mail = Mail(app)
+
 # Database setup
 class Base(DeclarativeBase):
     pass
@@ -50,7 +61,7 @@ class Base(DeclarativeBase):
 class Students(Base):
     __tablename__ = "students"
     id : Mapped[int] = mapped_column(primary_key=True)
-    name : Mapped[str] = mapped_column(String())
+    code : Mapped[str] = mapped_column(String())
     email : Mapped[str] = mapped_column(String())
 
 class Admins(Base):
@@ -59,10 +70,18 @@ class Admins(Base):
     code : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
 
-class Calendar(Base):
-    __tablename__ = "calendar"
+class Attendance(Base):
+    __tablename__ = "attendance"
     id : Mapped[int] = mapped_column(primary_key=True)
     date : Mapped[str] = mapped_column(String())
+    student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
+    student : Mapped["Students"] = relationship()
+
+class Timetables(Base):
+    __tablename__ = "timetables"
+    id : Mapped[int] = mapped_column(primary_key=True)
+    day : Mapped[str] = mapped_column(String())
+    code : Mapped[str] = mapped_column(String())
     student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
     student : Mapped["Students"] = relationship()
 
@@ -92,31 +111,70 @@ def calendar():
         )
 
 
-# Upload student rolls page
-# @app.route('/calendar', methods=['GET', 'POST'])
-# def index():
-#     message = None
-#     if request.method == 'POST':
-#         file = request.files['file']
-#         if file and file.filename.endswith(('.xlsx', '.xls', '.csv')):
-#             # Secure the filename and clean it for table naming
-#             filename = secure_filename(file.filename)
-#             table_name = os.path.splitext(filename)[0].lower()
-            
-#             # Read spreadsheet using pandas
-#             if filename.endswith('.csv'):
-#                 df = pd.read_csv(file)
-#             else:
-#                 df = pd.read_excel(file)
-            
-#             # Save dataframe to database
-#             # 'if_exists=replace' drops old table if it has the same name
-#             # 'con=db.engine' connects pandas directly to your Flask database
-#             df.to_sql(name=table_name, con=db.engine, if_exists='replace', index=False)
-            
-#             message = f"Successfully saved to database as table: '{table_name}'!"
-            
-#     return render_template('index.html', message=message)
+# Upload student timetable page
+@app.route("/upload-timetable", methods=["GET", "POST"])
+def upload_timetable():
+    if request.method == "POST":
+        # Catch file not uploaded
+        if "file" not in request.files:
+            flash("No file was uploaded.")
+            return app.redirect("/upload-students")
+
+        file = request.files["file"]
+
+        # Catch file not selected
+        if file.filename == "":
+            flash("Please select a file.")
+            return app.redirect("/upload-students")
+
+        # Catch if file is not .CSV
+        if not file.filename.lower().endswith(auth.valid_filetype):
+            flash("Please upload a .CSV file.")
+            return app.redirect("/upload-students")
+
+        try:
+            # Read the uploaded file
+            stream = io.TextIOWrapper(file.stream, encoding="utf-8", newline="")
+            csv_reader = csv.DictReader(stream)
+
+            # Keep track of how many rows are added and skipped
+            added = 0
+            skipped = 0
+
+            for row in csv_reader:
+                email = row.get("email", "").strip()
+
+                # Skip empty rows
+                if not email:
+                    skipped += 1
+                    continue
+
+                # Catch duplicates of the same student
+                existing_user = db.session.execute(
+                    select(Students).where(Students.email == email)
+                ).scalar_one_or_none()
+
+                if existing_user:
+                    skipped += 1
+                    continue
+
+                student = Students(email=email)
+
+                db.session().add(Students(email=email))
+                added += 1
+            db.session().commit()
+
+            flash(f"Successfully added {added} students. Skipped {skipped} rows.")
+            return app.redirect("/upload-students")
+        
+        # Catch if CSV didn't upload properly
+        except Exception as e:
+            db.session.rollback()
+            print("CSV upload error:", e)
+
+            flash("An error occurred while importing.")
+            return app.redirect("/upload-students")
+    return render_template("upload-students.html", title="Upload Students")
 
 
 # Send email function
@@ -147,51 +205,37 @@ def sign_up():
         abort(401)
     
     if request.method == "POST":
-        email = request.form.get("email")
-        first_name = request.form.get("first_name")
-        last_name = request.form.get("last_name")
+        email = request.form.get("email").strip()
 
         # Catch blank inputs
-        if not email or not first_name or not last_name:
-            flash("Please provide valid inputs")
+        if not email:
+            flash("Please provide a valid email")
             return app.redirect('/sign-up')
         # Catch non-burnside email addresses
-        if not email.endswith("@burnside.school.nz"):
-            flash("Please use your school Google account.")
+        if not email.endswith(auth.domain_name):
+            flash("Please use your school Email address.")
             return app.redirect("/sign-up")
-        # Catch user putting numbers in their name
-        for letter in first_name:
-            if letter.isnumeric():
-                flash('Please provide a valid name length')
-                return app.redirect('/sign-up')
-        for letter in last_name:
-            if letter.isnumeric():
-                flash('Please provide a valid name length')
-                return app.redirect('/sign-up')
         
-        # Checking that this account doesn't already exist
-        existing_users = db.session().execute(select(Students).where(Students.email == email)).scalar_one_or_none()
+        # Catch accounts that already exist
+        existing_users = db.session().execute(
+            select(Students).where(Students.email == email)
+            ).scalar_one_or_none()
         if existing_users:
+            flash("An account is already registered under this Email.")
             return app.redirect('/sign-up')
 
-        # Store the variables as a session for confirmation page
-        session['email'] = email
-        session["first_name"] = first_name
-        session["last_name"] = last_name
-
-        # Generate a random 6 digit code and store it as a session
+        # Generate a random 6 digit code
         correct_number = random.randint(100000, 999999)
+
+        # Store variables as sessions for confirmation page
+        session['email'] = email
         session["correct_number"] = correct_number
 
-        # Send the email
+        # Send email with confirmation number to recipient
         try:
-            Thread(
-                target=send_confirmation_email,
-                args=(app, email, correct_number),
-                daemon=True
-            ).start()
+            send_confirmation_email(app, email, correct_number)
         except Exception as e:
-            print("Email error:", e)
+            print("Email error:", repr(e))
             flash("An error occurred, please try again later.")
             return app.redirect('/sign-up')
 
@@ -202,23 +246,21 @@ def sign_up():
 # Page for entering confirmation code
 @app.route("/confirm", methods=['POST', 'GET'])
 def confirm():
-    # Getting variables from the session
+    # Getting variables from sign-up page sessions
     email = session.get("email")
-    first_name = session.get("first_name")
-    last_name = session.get("last_name")
     correct_number = session.get("correct_number")
 
-    # prevents users from accessing the route if they are not making an account
-    if correct_number is None:
+    # Prevents users from accessing the route if they are not making an account
+    if not correct_number or not email:
         abort(401)
 
     if request.method == "POST":
-        # Get user's confirmation number, and catch if it contains letters
+        # Get user's confirmation number
         try:
             confirmation_number = int(
             request.form.get("confirmation_number", "").strip()
             )
-        except ValueError:
+        except ValueError:      # Catch users inputting letters into the field
             flash("Please enter a valid confirmation number")
             return app.redirect('/confirm')
 
@@ -229,20 +271,20 @@ def confirm():
             db.session().commit()
 
             session.clear()  # Clears the session variables
-            # Logging in user after successful account creation
             
-            return app.redirect('/')
+            # Redirect user to student login
+            return app.redirect("/student-login")
         else:
             flash("Invalid confirmation number")
-            return app.redirect('/confirm')
+            return app.redirect("/confirm")
 
     return render_template("confirm.html", title="Confirm")
 
 
-# teacher login page
+# Teacher login page
 @app.route("/teacher-login")
 def teacher_login():
-    if "teacher" not in session:  # instantiate session
+    if "teacher" not in session:  # Instantiate session
         session["teacher"] = False
 
     if session.get("teacher"):
@@ -255,8 +297,8 @@ def teacher_login():
 def teacherloginregister():
     code = request.form.get("username")
     password = request.form.get("password")
-    # check for character limit
-    if len(code) > 100 or len(password) > 100:
+    # Catch if user exceeds character limit
+    if len(code) > auth.max_characters or len(password) > auth.max_characters:
         flash("Too many characters entered.")
         return app.redirect("/teacher-login")
 
@@ -266,7 +308,7 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
     
     if check_password_hash(user.password, password):
-        # set student id and name
+        # Set account sessions
         session["teacher"] = user.id
         session["name"] = user.code
         return app.redirect("/")
@@ -279,77 +321,81 @@ def teacherloginregister():
 @app.route("/student-login")
 def student_login():
     # check if user is already logged in
-    if not session.get("student"):
+    if session.get("student"):
         return app.redirect("/")
     
     return render_template("student-login.html", title="Student Login")
 
 
-# redirect to google login
+# Redirect to google login
 @app.route("/student-loginregister")
 def student_loginregister():
-    # check if user is already logged in
-    if not session.get("student"):
+    # Catch users that are already logged in
+    if session.get("student"):
         return app.redirect("/")
     
-    # send user to google login
+    # Send user to google login
     redirect_uri = url_for("google_callback", _external=True)
     return google.authorize_redirect(redirect_uri)
 
 
-# google login functionality
+# Google login functionality
 @app.route("/auth/google/callback")
 def google_callback():
-    # get user information
+    # Get user information
     token = google.authorize_access_token()
     user = token["userinfo"]
 
     email = user["email"]
 
-    # check if email is from Burnside
-    if not email.endswith("@burnside.school.nz"):
+    # Check if email is from Burnside
+    if not email.endswith(auth.domain_name):
         flash("Please use your school Google account.")
         return app.redirect("/student-login")
 
-    # get student based on email
+    # Get student based on email
     student = db.session.execute(
         select(Students).where(Students.email == email)
     ).scalar_one_or_none()
 
-    # check if student exists
+    # Catch if student account isn't registered
     if student is None:
         flash("No student account found.")
         return app.redirect("/student-login")
 
-    session["student"] = student.code
+    # Get student code
+    student_code = student.email[:5]
+
+    # Set account sessiosn
+    session["student"] = student.email
+    session["name"] = student_code
     return app.redirect("/")
 
 
-# removes student/teacher sessions
+# Removes all sessions and returns home
 @app.route("/sign-out")
 def sign_out():
     session.clear()
     return app.redirect("/")
 
 
-# student-end attendance
+# Student-end attendance
 @app.route("/check-in")
 def check_in():
     double_counter = False
     current_date = date.today()
 
-    # catch users that are not logged in
+    # Catch users that are not logged in
     if "student" not in session or not session["student"]:
             abort(401)
 
-    # check if user already checked in
+    # Catch if user already checked in
     attendance = db.session().execute(
         select(Calendar).
         where(Calendar.student_id == session["student"]).
         where(Calendar.date == current_date)
         ).one_or_none()
 
-    # check if user has already checked in
     if attendance:
         double_counter = True
 
