@@ -137,30 +137,35 @@ def upload_timetable():
             stream = io.TextIOWrapper(file.stream, encoding="utf-8", newline="")
             csv_reader = csv.DictReader(stream)
 
+            print(csv_reader)
+
             # Keep track of how many rows are added and skipped
             added = 0
             skipped = 0
 
+            # Iterate through each row and add it to the database
             for row in csv_reader:
-                email = row.get("email", "").strip()
+                code = row.get("Student ID").strip()
+                last_name = row.get("Last Name").strip()
+                first_name = row.get("First Name").strip()
 
                 # Skip empty rows
-                if not email:
+                if not code:
                     skipped += 1
                     continue
 
                 # Catch duplicates of the same student
                 existing_user = db.session.execute(
-                    select(Students).where(Students.email == email)
-                ).scalar_one_or_none()
+                    select(Timetables).where(Timetables.code == code)
+                    ).scalar_one_or_none()
 
                 if existing_user:
                     skipped += 1
                     continue
 
-                student = Students(email=email)
-
-                db.session().add(Students(email=email))
+                db.session().add(
+                    Timetables(code=code, last_name=last_name, first_name=first_name)
+                    )
                 added += 1
             db.session().commit()
 
@@ -179,13 +184,13 @@ def upload_timetable():
 
 # Send email function
 def send_confirmation_email(app, recipient, confirmation_code):
-    '''Function for sending the confirmation email'''
     with app.app_context():
         message = Message(
             subject="[StudyChecker] Confirmation Code",
             recipients=[recipient]
         )
 
+        # Email contents
         message.body = (
             f"Kia ora,\n\n"
             f"Here is your confirmation code: {confirmation_code}\n\n"
