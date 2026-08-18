@@ -1,0 +1,35 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="login">
+    <h1><i class="fa-solid fa-user"></i> Upload Timetables</h1>
+    
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+                {% for message in messages %}
+                    <h3>*{{ message }}</h3>
+                {% endfor %}
+        {% else %}
+            <h2>Upload student timetables for each day of the week</h2>
+        {% endif %}
+    {% endwith %}
+
+    <form action="/upload-timetable" method="POST" enctype="multipart/form-data">
+        <select id="day" name="day" class="login-box">
+            <option value="monday" selected>Monday</option>
+            <option value="tuesday">Tuesday</option>
+            <option value="wednesday">Wednesday</option>
+            <option value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+        </select>
+        <br>
+        <input type="file" id="file" name="file" accept=".csv" class="file" required>
+        <br>
+        <input type="submit" value="Upload" class="login-submit">
+    </form>
+
+    <hr>
+    <h2>Adding a new timetable will completely replace the previous timetable</h2>
+</div>
+{% endblock %}

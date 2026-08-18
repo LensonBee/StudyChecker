@@ -82,8 +82,8 @@ class Timetables(Base):
     id : Mapped[int] = mapped_column(primary_key=True)
     day : Mapped[str] = mapped_column(String())
     code : Mapped[str] = mapped_column(String())
-    student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
-    student : Mapped["Students"] = relationship()
+    last_name : Mapped[str] = mapped_column(String())
+    first_name : Mapped[str] = mapped_column(String())
 
 
 # GENERAL ROUTES
@@ -101,10 +101,7 @@ def calendar():
     if not session.get("teacher"):
         abort(401)
 
-    students = db.session().execute(select(Calendar)).all()
-
-    if not students:
-        print(students)
+    students = db.session().execute(select(Attendance)).all()
 
     return render_template(
         "attendance.html", title="Calendar", students=students, current_date=current_date
@@ -118,26 +115,28 @@ def upload_timetable():
         # Catch file not uploaded
         if "file" not in request.files:
             flash("No file was uploaded.")
-            return app.redirect("/upload-students")
+            return app.redirect("/upload-timetable")
 
+        # Get uploaded file and day
         file = request.files["file"]
+        day = request.form.get("day")
 
         # Catch file not selected
         if file.filename == "":
             flash("Please select a file.")
-            return app.redirect("/upload-students")
+            return app.redirect("/upload-timetable")
 
         # Catch if file is not .CSV
         if not file.filename.lower().endswith(auth.valid_filetype):
             flash("Please upload a .CSV file.")
-            return app.redirect("/upload-students")
+            return app.redirect("/upload-timetable")
 
         try:
             # Read the uploaded file
-            stream = io.TextIOWrapper(file.stream, encoding="utf-8", newline="")
+            stream = io.TextIOWrapper(file.stream, encoding="utf-8-sig", newline="")
             csv_reader = csv.DictReader(stream)
 
-            print(csv_reader)
+            print("CSV HEADERS:", csv_reader.fieldnames)
 
             # Keep track of how many rows are added and skipped
             added = 0
@@ -145,32 +144,41 @@ def upload_timetable():
 
             # Iterate through each row and add it to the database
             for row in csv_reader:
-                code = row.get("Student ID").strip()
-                last_name = row.get("Last Name").strip()
-                first_name = row.get("First Name").strip()
+                print("ROW:", row)
 
-                # Skip empty rows
+                code = row.get("Student ID", "").strip()
+                last_name = row.get("Last Name", "").strip()
+                first_name = row.get("First Name", "").strip()
+
                 if not code:
                     skipped += 1
                     continue
 
-                # Catch duplicates of the same student
                 existing_user = db.session.execute(
-                    select(Timetables).where(Timetables.code == code)
-                    ).scalar_one_or_none()
+                select(Timetables).where(
+                Timetables.code == code,
+                Timetables.day == day
+                )
+                ).scalar_one_or_none()
 
                 if existing_user:
                     skipped += 1
                     continue
 
-                db.session().add(
-                    Timetables(code=code, last_name=last_name, first_name=first_name)
-                    )
+                db.session.add(
+                Timetables(
+                day=day,
+                code=code,
+                last_name=last_name,
+                first_name=first_name
+                )
+                )
+
                 added += 1
             db.session().commit()
 
             flash(f"Successfully added {added} students. Skipped {skipped} rows.")
-            return app.redirect("/upload-students")
+            return app.redirect("/upload-timetable")
         
         # Catch if CSV didn't upload properly
         except Exception as e:
@@ -178,8 +186,8 @@ def upload_timetable():
             print("CSV upload error:", e)
 
             flash("An error occurred while importing.")
-            return app.redirect("/upload-students")
-    return render_template("upload-students.html", title="Upload Students")
+            return app.redirect("/upload-timetable")
+    return render_template("upload-timetable.html", title="Upload Students")
 
 
 # Send email function
@@ -210,7 +218,7 @@ def sign_up():
         abort(401)
     
     if request.method == "POST":
-        email = request.form.get("email").strip()
+        email = request.form.get("email", "").strip()
 
         # Catch blank inputs
         if not email:

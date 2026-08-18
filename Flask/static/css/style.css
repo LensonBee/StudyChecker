@@ -273,6 +273,30 @@ a {
     font-family: raleway;
 }
 
+.login .file {
+    display: inline-block;
+    padding: 1vw;
+    margin: 0 0 4vw 0;
+    border-radius: 1vw;
+    border-width: 0;
+    background-color: white;
+
+    font-family: raleway;
+}
+
+.login .file:hover {
+    background-color: #00AB8E;
+}
+
+.login .file::file-selector-button {
+    font-family: raleway;
+    background-color: lightgray;
+    padding: 1vw;
+    margin: 0 1vw 0 0;
+    border: none;
+    border-radius: 1vw;
+}
+
 .login .google-submit {
     display: inline-block;
     padding: 2vw;
