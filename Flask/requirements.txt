@@ -5,3 +5,4 @@ Flask-Mail
 authlib
 requests
 python-dotenv
+Flask-SQLAlchemy
