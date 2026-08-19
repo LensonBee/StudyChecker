@@ -14,6 +14,7 @@ import auth
 import csv
 import io
 
+
 app = Flask(__name__)
 DATABASE = "study.db"
 
