@@ -1,10 +1,8 @@
 from flask import Flask, render_template, abort, session, request, flash, url_for
-import sqlite3
 import subprocess
-import requests
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values
+from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values, delete
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, date
@@ -12,7 +10,6 @@ from authlib.integrations.flask_client import OAuth
 import random
 from flask_mail import Mail, Message
 import random
-import os
 import auth
 import csv
 import io
@@ -74,7 +71,8 @@ class Attendance(Base):
     __tablename__ = "attendance"
     id : Mapped[int] = mapped_column(primary_key=True)
     date : Mapped[str] = mapped_column(String())
-    student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
+    location : Mapped[str] = mapped_column(String())
+    student_id : Mapped[int] = mapped_column(ForeignKey("students.code"))
     student : Mapped["Students"] = relationship()
 
 class Timetables(Base):
@@ -94,7 +92,7 @@ def home():
 
 # Attendance list
 @app.route("/attendance")
-def calendar():
+def attendance():
     current_date = date.today()
 
     # Catch non-teacher accounts
@@ -108,6 +106,29 @@ def calendar():
         )
 
 
+# Timetable list
+@app.route("/timetables", methods=["GET", "POST"])
+def timetables():
+    # Catch non-teacher accounts
+    if not session.get("teacher"):
+        abort(401)
+
+    # Get day if a filter was applied
+    if request.method == "POST":
+        day = request.form.get("day")
+    else:
+        day = auth.default_day
+
+    # Get students based on day
+    students = db.session().execute(
+        select(Timetables).where(Timetables.day == day)
+        ).all()
+    
+    return render_template(
+        "timetables.html", title="Timetables", day=day, students=students
+        )
+
+
 # Upload student timetable page
 @app.route("/upload-timetable", methods=["GET", "POST"])
 def upload_timetable():
@@ -117,14 +138,19 @@ def upload_timetable():
             flash("No file was uploaded.")
             return app.redirect("/upload-timetable")
 
-        # Get uploaded file and day
-        file = request.files["file"]
-        day = request.form.get("day")
-
         # Catch file not selected
         if file.filename == "":
             flash("Please select a file.")
             return app.redirect("/upload-timetable")
+
+        # Get uploaded file and day
+        file = request.files["file"]
+        day = request.form.get("day")
+
+        # Delete old timetable for that day
+        db.session().execute(
+            delete(Timetables).where(Timetables.day == day)
+        )
 
         # Catch if file is not .CSV
         if not file.filename.lower().endswith(auth.valid_filetype):
@@ -151,17 +177,6 @@ def upload_timetable():
                 first_name = row.get("First Name", "").strip()
 
                 if not code:
-                    skipped += 1
-                    continue
-
-                existing_user = db.session.execute(
-                select(Timetables).where(
-                Timetables.code == code,
-                Timetables.day == day
-                )
-                ).scalar_one_or_none()
-
-                if existing_user:
                     skipped += 1
                     continue
 
@@ -233,6 +248,7 @@ def sign_up():
         existing_users = db.session().execute(
             select(Students).where(Students.email == email)
             ).scalar_one_or_none()
+        
         if existing_users:
             flash("An account is already registered under this Email.")
             return app.redirect('/sign-up')
@@ -261,6 +277,7 @@ def sign_up():
 def confirm():
     # Getting variables from sign-up page sessions
     email = session.get("email")
+    code = email[:5]
     correct_number = session.get("correct_number")
 
     # Prevents users from accessing the route if they are not making an account
@@ -280,12 +297,13 @@ def confirm():
         # Final confirmation
         if confirmation_number == correct_number:
             # Add the account into the database if confirmation is right
-            db.session().add(Students(email=email))
+            db.session().add(Students(email=email, code=code))
             db.session().commit()
 
             session.clear()  # Clears the session variables
             
             # Redirect user to student login
+            flash("Account successfully created")
             return app.redirect("/student-login")
         else:
             flash("Invalid confirmation number")
@@ -315,7 +333,10 @@ def teacherloginregister():
         flash("Too many characters entered.")
         return app.redirect("/teacher-login")
 
-    user = db.session().execute(select(Admins).where(Admins.code == code)).scalar_one_or_none()
+    user = db.session().execute(
+        select(Admins).where(Admins.code == code)
+        ).scalar_one_or_none()
+    
     if not user:
         flash("User does not exist.")
         return app.redirect("/teacher-login")
@@ -379,7 +400,7 @@ def google_callback():
     # Get student code
     student_code = student.email[:5]
 
-    # Set account sessiosn
+    # Set account sessions
     session["student"] = student.email
     session["name"] = student_code
     return app.redirect("/")
@@ -402,16 +423,22 @@ def check_in():
     if "student" not in session or not session["student"]:
             abort(401)
 
+    # Get student id based on account session
+    student_id = db.session().execute(
+        select(Students.id).where(Students.code == session["name"])
+        ).scalar_one_or_none()
+
     # Catch if user already checked in
     attendance = db.session().execute(
-        select(Calendar).
-        where(Calendar.student_id == session["student"]).
-        where(Calendar.date == current_date)
-        ).one_or_none()
+        select(Attendance).where(
+            Attendance.student_id == student_id, 
+            Attendance.date == current_date)
+    ).scalar_one_or_none()
 
     if attendance:
         double_counter = True
 
+    print(double_counter)
     return render_template("check-in.html", title="Check-in", double_counter=double_counter)
 
 
@@ -421,22 +448,32 @@ def checkin_register():
     data = wifi.decode('utf-8')
     network_name = str()
     current_date = date.today()
-    user_id = session["student"]
+    location = request.form.get("location")
 
     print(data)
 
-    # extract wifi network name (SSID)
+    # Extract wifi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:
             network_name = line.split(':')[1].strip()
             flash(f"Connected to: {network_name}")
             break
     
-    # check if network name was extracted
+    # Check if network name was extracted
     if not network_name:
         flash("Not connected to any network.")
 
-    db.session().add(Calendar(date=current_date, student_id=user_id))
+    # Get student_id based on account session
+    student_id = db.session().execute(
+            select(Students.id).where(Students.code == session["name"])
+            ).scalar_one_or_none()
+
+    # Add log attendance table
+    db.session().add(
+        Attendance(date=current_date, 
+                   location=location, 
+                   student_id=student_id)
+        )
     db.session().commit()
     
     return app.redirect("/check-in")

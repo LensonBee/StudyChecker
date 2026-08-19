@@ -17,11 +17,11 @@
 
     <form action="/upload-timetable" method="POST" enctype="multipart/form-data">
         <select id="day" name="day" class="login-box">
-            <option value="monday" selected>Monday</option>
-            <option value="tuesday">Tuesday</option>
-            <option value="wednesday">Wednesday</option>
-            <option value="thursday">Thursday</option>
-            <option value="friday">Friday</option>
+            <option value="Monday" selected>Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
         </select>
         <br>
         <input type="file" id="file" name="file" accept=".csv" class="file" required>
@@ -30,6 +30,6 @@
     </form>
 
     <hr>
-    <h2>Adding a new timetable will completely replace the previous timetable</h2>
+    <h2>Adding a new timetable will completely replace the previous timetable assigned to the same day</h2>
 </div>
 {% endblock %}

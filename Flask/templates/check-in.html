@@ -13,10 +13,19 @@
         {% endif %}
     {% endwith %}
 
-    {% if counter %}
-    <form action="/check-register" method="post">
-        <input type="submit" value="Check In" class="checkin-submit">
+    {% if not double_counter %}
+    <form action="/check-register" method="post" enctype="multipart/form-data">
+        <select id="location" name="location" class="login-box">
+            <option value="Library" selected>Library</option>
+            <option value="P Block">P Block</option>
+            <option value="Common Room">Common Room</option>
+            <option value="Other">Other</option>
+        </select>
+        <br>
+        <input type="submit" value="Check In" class="login-submit">
     </form>
+    {% else %}
+    <h1>You've checked in for today</h1>
     {% endif %}
 
     <hr>

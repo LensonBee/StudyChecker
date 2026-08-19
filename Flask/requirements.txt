@@ -1,0 +1,7 @@
+gunicorn 
+Flask
+Werkzeug
+Flask-Mail
+authlib
+requests
+python-dotenv

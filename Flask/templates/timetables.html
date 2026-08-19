@@ -1,0 +1,43 @@
+{% extends "prefabs/layout.html" %}
+
+{% block content %}
+<div class="list">
+    <div class="filter">
+        <h1>Select a day</h1>
+
+        <form action="/timetables" method="POST" enctype="multipart/form-data">
+            <select id="day" name="day" class="login-box">
+                <option value="Monday" selected>Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+            </select>
+            <br>
+            <input type="submit" value="Apply filter" class="login-submit">
+        </form>
+    </div>
+
+    <div class="listbox">
+        <h1>Timetable for {{ day }}</h1>
+        {% if students %}
+            {% for student in students %}
+                <div>
+                    <h1>
+                        <i class="fa-solid fa-user"></i>
+                        {{ student.code }} | 
+                        {{ student.last_name }}, 
+                        {{student.first_name}} 
+                    </h1>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div>
+                <h1>
+                    There is currently no timetable for {{ day }}
+                </h1>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

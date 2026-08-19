@@ -337,22 +337,6 @@ a {
     text-decoration: underline;
 }
 
-.login .checkin-submit {
-    height: 10vw;
-    width: 30vw;
-    border-radius: 2vw;
-    border-width: 0;
-
-    text-align: center;
-    font-family: comfortaa;
-    font-size: 2vw;
-    transition-duration: 0.3s;
-}
-
-.login .checkin-submit:hover {
-    background-color: #00AB8E;
-}
-
 .login hr {
     max-width: 40vw;
     margin: 2vw 0 1vw 0;
@@ -393,4 +377,38 @@ a {
     font-family: raleway;
     font-size: 2vw;
     color: black;
+}
+
+/** FILTER STYLES **/
+.filter {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 2vw;
+    margin: 0 0 2vw;
+
+    background-color: white;
+    border-radius: 4vw;
+    max-width: 40vw;
+}
+
+.filter .login-box {
+    padding: 1vw;
+    margin: 0 0 2vw 0;
+    width: 30vw;
+
+    font-family: raleway;
+}
+
+.filter .login-submit {
+    padding: 1vw;
+    border-radius: 1vw;
+    border-width: 0;
+    background-color: lightgray;
+
+    font-family: raleway;
+    transition-duration: 0.3s;
+}
+
+.filter .login-submit:hover {
+    background-color: #00AB8E;
 }

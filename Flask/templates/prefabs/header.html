@@ -33,7 +33,8 @@
 
     <!-- Display if teacher is logged in -->
     {% if session["teacher"] %}
-        <a href="{{ url_for('calendar') }}">Attendance</a>
+        <a href="{{ url_for('attendance') }}">Attendance</a>
+        <a href="{{ url_for('timetables') }}">Timetables</a>
         <a href="{{ url_for('upload_timetable') }}">Upload Timetables</a>
     {% endif %}
 
