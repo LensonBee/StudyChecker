@@ -455,11 +455,39 @@ def checkin_register():
     wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
     data = wifi.decode('utf-8')
     network_name = str()
+
     current_date = date.today()
+    current_day = datetime.now().strftime("%A")
+    current_time = datetime.now().time()
+
 
     # Get location from user input
     location = request.form.get("location")
 
+    # Time frame checks
+    # Check it is a school day
+    if current_day not in auth.time_frames:
+        flash("Attendance is not available today.")
+        return app.redirect("/check-in")
+    
+    # Get today's time frame
+    start_time = datetime.strptime(
+        auth.time_frames[current_day][0], "%H:%M"
+    ).time()
+    
+    end_time = datetime.strptime(
+        auth.time_frames[current_day][1], "%H:%M"
+    ).time()
+    
+    # Check whether current time is within the allowed period
+    if not start_time <= current_time <= end_time:
+        flash(
+            f"Attendance is only available between "
+            f"{auth.time_frames[current_day][0]}am and {auth.time_frames[current_day][1]}am"
+        )
+        return app.redirect("/check-in")
+
+    # Wifi checks
     # Extract wifi network name (SSID)
     for line in data.split('\n'):
         if 'SSID' in line:
