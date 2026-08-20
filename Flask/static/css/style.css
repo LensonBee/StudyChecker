@@ -121,12 +121,21 @@ a {
     margin: 4vw 0 4vw 4vw;
 }
 
-.footer h1 {
+.footer a {
     color: white;
     font-family: oswald;
     font-weight: bold;
     font-size: 1.5vw;
     margin: auto 0 auto 0;
+    padding: 1vw 1vw 1vw 0;
+}
+
+.footer h1 {
+    color: white;
+    font-family: oswald;
+    font-weight: bold;
+    font-size: 1vw;
+    margin: auto 4vw auto auto;
     padding: 1vw 1vw 1vw 0;
 }
 
@@ -265,6 +274,21 @@ a {
     margin: 0 0 2vw 0;
 }
 
+.login h4 {
+    font-family: comfortaa;
+    font-size: 1.75vw;
+    color: white;
+    background-color: #00AB8E;
+    padding: 1vw 2vw 1vw 2vw;
+    border-radius: 1vw;
+    max-width: 30vw;
+    transition-duration: 0.3s;
+}
+
+.login h4:hover {
+    color: #004E42;
+}
+
 .login .login-box {
     padding: 1vw;
     margin: 0 0 2vw 0;
@@ -363,6 +387,9 @@ a {
 }
 
 .listbox div {
+    display: flex;
+    flex-direction: row;
+
     padding: 0 0 0 2vw;
     background-color: white;
     transition-duration: 0.3s;
@@ -377,6 +404,14 @@ a {
     font-family: raleway;
     font-size: 2vw;
     color: black;
+}
+
+.list h2 {
+    font-family: raleway;
+    font-size: 2vw;
+    color: black;
+
+    margin: auto 2vw auto auto;
 }
 
 /** FILTER STYLES **/

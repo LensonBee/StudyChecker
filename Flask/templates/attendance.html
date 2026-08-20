@@ -5,18 +5,26 @@
     <div class="listbox">
         <h1>Attendance for: {{ current_date }}</h1>
         {% if students %}
-            {% for student in students %}
+            {% for code, location, first_name, last_name in students %}
                 <div>
                     <h1>
                         <i class="fa-solid fa-user"></i>
-                        {{ student.student_id }}
-                        {{ student.date }}
+                        {{ code }} | 
+                        {{ last_name }}, 
+                        {{ first_name }}
                     </h1>
+                    <h2>
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        {{ location }}
+                    </h2>
                 </div>
             {% endfor %}
         {% else %}
                 <div>
-                    <h1>No results found.</h1>
+                    <h1>
+                        <i class="fa-solid fa-ghost"></i> 
+                        No results found.
+                    </h1>
                 </div>
         {% endif %}
     </div>
