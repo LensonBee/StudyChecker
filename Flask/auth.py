@@ -15,5 +15,8 @@ time_frames = {"Monday": ["09:00", "10:00"],
                "Thursday": ["08:30", "09:30"], 
                "Friday": ["08:30", "09:30"]}
 
+# Upload parameters
+required_columns = ["Student ID", "Last Name", "First Name"]
+
 # Integer defaults
 max_characters = int(100)

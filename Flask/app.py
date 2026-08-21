@@ -79,7 +79,8 @@ class Timetables(Base):
     __tablename__ = "timetables"
     id : Mapped[int] = mapped_column(primary_key=True)
     day : Mapped[str] = mapped_column(String())
-    code : Mapped[str] = mapped_column(String())
+    student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
+    student : Mapped["Students"] = relationship()
     last_name : Mapped[str] = mapped_column(String())
     first_name : Mapped[str] = mapped_column(String())
 
@@ -107,7 +108,7 @@ def attendance():
                Timetables.last_name)
         .join(
             Timetables,
-            Attendance.student_id == Timetables.code
+            Attendance.student_id == Timetables.student_id
         )
         .where(
             Attendance.date == current_date,
@@ -148,10 +149,18 @@ def timetables():
 # Upload student timetable page
 @app.route("/upload-timetable", methods=["GET", "POST"])
 def upload_timetable():
+    # Catch non-teacher accounts
+    if not session.get("teacher"):
+        abort(401)
+
     if request.method == "POST":
         # Get uploaded file and day
         file = request.files["file"]
         day = request.form.get("day")
+
+        # Read the uploaded file
+        stream = io.TextIOWrapper(file.stream, encoding="utf-8-sig", newline="")
+        csv_reader = csv.DictReader(stream)
 
         # Catch file not uploaded
         if "file" not in request.files:
@@ -168,17 +177,23 @@ def upload_timetable():
             flash("Please upload a .CSV file.")
             return app.redirect("/upload-timetable")
 
-        # Delete old timetable for that day
-        db.session().execute(
-            delete(Timetables).where(Timetables.day == day)
-        )
+        # Catch missing columns in .CSV
+        columns = set(csv_reader.fieldnames or [])
 
+        missing_columns = set(auth.required_columns) - columns
+
+        if missing_columns:
+            flash(
+                "CSV is missing required columns: "
+                + ", ".join(missing_columns))
+            return app.redirect("/upload-timetable")
+
+        # Since file is a .CSV and has no missing columns, start adding data
         try:
-            # Read the uploaded file
-            stream = io.TextIOWrapper(file.stream, encoding="utf-8-sig", newline="")
-            csv_reader = csv.DictReader(stream)
-
-            print("CSV HEADERS:", csv_reader.fieldnames)
+            # Delete old timetable for that day
+            db.session().execute(
+                    delete(Timetables).where(Timetables.day == day)
+                    )
 
             # Keep track of how many rows are added and skipped
             added = 0
@@ -192,14 +207,14 @@ def upload_timetable():
                 last_name = row.get("Last Name", "").strip()
                 first_name = row.get("First Name", "").strip()
 
-                if not code:
+                if not code or not first_name or not last_name:
                     skipped += 1
                     continue
 
                 db.session.add(
                 Timetables(
                 day=day,
-                code=code,
+                student_id=code,
                 last_name=last_name,
                 first_name=first_name
                 )
@@ -314,7 +329,7 @@ def confirm():
         # Final confirmation
         if confirmation_number == correct_number:
             # Add the account into the database if confirmation is right
-            db.session().add(Students(email=email, id=code))
+            db.session().add(Students(id=code, email=email))
             db.session().commit()
 
             session.clear()  # Clears the session variables
@@ -335,7 +350,7 @@ def teacher_login():
     if "teacher" not in session:  # Instantiate session
         session["teacher"] = False
 
-    if session.get("teacher"):
+    if session.get("teacher") or session.get("student"):
         return app.redirect("/")
 
     return render_template("teacher-login.html", title="Teacher Login")
@@ -372,7 +387,7 @@ def teacherloginregister():
 @app.route("/student-login")
 def student_login():
     # check if user is already logged in
-    if session.get("student"):
+    if session.get("student") or session.get("teacher"):
         return app.redirect("/")
     
     return render_template("student-login.html", title="Student Login")
