@@ -1,18 +1,19 @@
-from flask import Flask, render_template, abort, session, request, flash, url_for
-import subprocess
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey, select, Table, Column, Select, update, values, delete
-from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
-from datetime import datetime, date
-from authlib.integrations.flask_client import OAuth
-import random
-from flask_mail import Mail, Message
-import random
-import auth
+""" ROUTES """
 import csv
 import io
+import random
+import subprocess
+from datetime import date, datetime
+
+import auth
+
+from flask_mail import Mail, Message
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import ForeignKey, String, delete, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from werkzeug.security import check_password_hash
+from authlib.integrations.flask_client import OAuth
+from flask import Flask, abort, flash, render_template, request, session, url_for
 
 
 app = Flask(__name__)
@@ -23,7 +24,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///study.db"
 app.secret_key = "tGmesA3v77abYK3Y1UkUMlWJny6KAA"
 
 # Google login setup
-app.config["GOOGLE_CLIENT_ID"] = "263142839019-j7p2ibefe1sm3vp1434dcr9m86butc3s.apps.googleusercontent.com"
+app.config[
+    "GOOGLE_CLIENT_ID"] = "263142839019-j7p2ibefe1sm3vp1434dcr9m86butc3s.apps.googleusercontent.com"
 app.config["GOOGLE_CLIENT_SECRET"] = "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"
 
 # Telomeres
@@ -46,28 +48,33 @@ app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USE_SSL"] = False
-app.config["MAIL_USERNAME"] = auth.sender_email
-app.config["MAIL_PASSWORD"] = auth.sender_password
-app.config["MAIL_DEFAULT_SENDER"] = auth.sender_email
+app.config["MAIL_USERNAME"] = auth.SENDER_EMAIL
+app.config["MAIL_PASSWORD"] = auth.SENDER_PASSWORD
+app.config["MAIL_DEFAULT_SENDER"] = auth.SENDER_EMAIL
 
 mail = Mail(app)
 
-# Database setup
 class Base(DeclarativeBase):
-    pass
+    """BASE TABLE"""
+
 
 class Students(Base):
+    """STUDENTS TABLE"""
     __tablename__ = "students"
     id : Mapped[int] = mapped_column(primary_key=True)
     email : Mapped[str] = mapped_column(String())
 
+
 class Admins(Base):
+    """ADMINS TABLE"""
     __tablename__ = "admins"
     id : Mapped[int] = mapped_column(primary_key=True)
     code : Mapped[str] = mapped_column(String())
     password : Mapped[str] = mapped_column(String())
 
+
 class Attendance(Base):
+    """ATTENDANCE LOG"""
     __tablename__ = "attendance"
     id : Mapped[int] = mapped_column(primary_key=True)
     date : Mapped[str] = mapped_column(String())
@@ -75,7 +82,9 @@ class Attendance(Base):
     student_id : Mapped[int] = mapped_column(ForeignKey("students.id"))
     student : Mapped["Students"] = relationship()
 
+
 class Timetables(Base):
+    """TIMETABLES"""
     __tablename__ = "timetables"
     id : Mapped[int] = mapped_column(primary_key=True)
     day : Mapped[str] = mapped_column(String())
@@ -86,14 +95,16 @@ class Timetables(Base):
 
 
 # GENERAL ROUTES
-@app.route("/")     
+@app.route("/")
 def home():
+    """DEFAULT HOME PAGE"""
     return render_template("home.html", title="Home")
 
 
 # Attendance list
 @app.route("/attendance")
 def attendance():
+    """DISPLAYS STUDENTS WHO HAVE CHECKED IN"""
     current_date = date.today()
     current_day = datetime.now().strftime("%A")
 
@@ -102,9 +113,9 @@ def attendance():
         abort(401)
 
     students = db.session.execute(
-        select(Attendance.student_id, 
-               Attendance.location, 
-               Timetables.first_name, 
+        select(Attendance.student_id,
+               Attendance.location,
+               Timetables.first_name,
                Timetables.last_name)
         .join(
             Timetables,
@@ -126,6 +137,7 @@ def attendance():
 # Timetable list
 @app.route("/timetables", methods=["GET", "POST"])
 def timetables():
+    """DISPLAYS UPLOADED TIMETABLES"""
     # Catch non-teacher accounts
     if not session.get("teacher"):
         abort(401)
@@ -134,13 +146,13 @@ def timetables():
     if request.method == "POST":
         day = request.form.get("day")
     else:
-        day = auth.default_day
+        day = auth.DEFAULT_DAY
 
     # Get students based on day
     students = db.session().execute(
         select(Timetables).where(Timetables.day == day)
         ).scalars().all()
-    
+
     return render_template(
         "timetables.html", title="Timetables", day=day, students=students
         )
@@ -149,6 +161,8 @@ def timetables():
 # Upload student timetable page
 @app.route("/upload-timetable", methods=["GET", "POST"])
 def upload_timetable():
+    """UPLOAD TIMETABLES TO DATABASE"""
+
     # Catch non-teacher accounts
     if not session.get("teacher"):
         abort(401)
@@ -171,16 +185,16 @@ def upload_timetable():
         if file.filename == "":
             flash("Please select a file.")
             return app.redirect("/upload-timetable")
-        
+
         # Catch if file is not .CSV
-        if not file.filename.lower().endswith(auth.valid_filetype):
+        if not file.filename.lower().endswith(auth.VALID_FILETYPE):
             flash("Please upload a .CSV file.")
             return app.redirect("/upload-timetable")
 
         # Catch missing columns in .CSV
         columns = set(csv_reader.fieldnames or [])
 
-        missing_columns = set(auth.required_columns) - columns
+        missing_columns = set(auth.REQUIRED_COLUMNS) - columns
 
         if missing_columns:
             flash(
@@ -225,9 +239,9 @@ def upload_timetable():
 
             flash(f"Successfully added {added} students. Skipped {skipped} rows.")
             return app.redirect("/upload-timetable")
-        
+
         # Catch if CSV didn't upload properly
-        except Exception as e:
+        except ValueError as e:
             db.session.rollback()
             print("CSV upload error:", e)
 
@@ -237,8 +251,10 @@ def upload_timetable():
 
 
 # Send email function
-def send_confirmation_email(app, recipient, confirmation_code):
-    with app.app_context():
+def send_confirmation_email(flask_app, recipient, confirmation_code):
+    """SEND EMAIL WITH CONFIRMATION CODE"""
+
+    with flask_app.app_context():
         message = Message(
             subject="[StudyChecker] Confirmation Code",
             recipients=[recipient]
@@ -255,14 +271,13 @@ def send_confirmation_email(app, recipient, confirmation_code):
 
 # Sign up page
 @app.route("/sign-up", methods=["POST", "GET"])
-def sign_up(): 
-    '''
-    Thanks to Alex Yao for helping with this function.
-    '''
+def sign_up():
+    """REQUEST EMAIL FOR NEW STUDENT ACCOUNT"""
+
     # Prevent logged in users from accessing the page
     if session.get("student") or session.get("teacher"):
         abort(401)
-    
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
 
@@ -270,17 +285,17 @@ def sign_up():
         if not email:
             flash("Please provide a valid email")
             return app.redirect('/sign-up')
-        
+
         # Catch non-burnside email addresses
-        if not email.endswith(auth.domain_name):
+        if not email.endswith(auth.DOMAIN_NAME):
             flash("Please use your school Email address.")
             return app.redirect("/sign-up")
-        
+
         # Catch accounts that already exist
         existing_users = db.session().execute(
             select(Students).where(Students.email == email)
             ).scalar_one_or_none()
-        
+
         if existing_users:
             flash("An account is already registered under this Email.")
             return app.redirect('/sign-up')
@@ -295,7 +310,7 @@ def sign_up():
         # Send email with confirmation number to recipient
         try:
             send_confirmation_email(app, email, correct_number)
-        except Exception as e:
+        except ValueError as e:
             print("Email error:", repr(e))
             flash("An error occurred, please try again later.")
             return app.redirect('/sign-up')
@@ -307,6 +322,8 @@ def sign_up():
 # Page for entering confirmation code
 @app.route("/confirm", methods=['POST', 'GET'])
 def confirm():
+    """ENTER CONFIRMATION CODE FOR NEW ACCOUNT"""
+
     # Getting variables from sign-up page sessions
     email = session.get("email")
     code = email[:5]
@@ -333,7 +350,7 @@ def confirm():
             db.session().commit()
 
             session.clear()  # Clears the session variables
-            
+
             # Redirect user to student login
             flash("Account successfully created")
             return app.redirect("/student-login")
@@ -347,6 +364,8 @@ def confirm():
 # Teacher login page
 @app.route("/teacher-login")
 def teacher_login():
+    """LOGIN TO TEACHER ACCOUNT"""
+
     if "teacher" not in session:  # Instantiate session
         session["teacher"] = False
 
@@ -358,21 +377,23 @@ def teacher_login():
 
 @app.route("/teacher-loginregister", methods=["GET", "POST"])
 def teacherloginregister():
+    """CHECK TEACHER USERNAME AND PASSWORD"""
+
     code = request.form.get("username")
     password = request.form.get("password")
     # Catch if user exceeds character limit
-    if len(code) > auth.max_characters or len(password) > auth.max_characters:
+    if len(code) > auth.MAX_CHARACTERS or len(password) > auth.MAX_CHARACTERS:
         flash("Too many characters entered.")
         return app.redirect("/teacher-login")
 
     user = db.session().execute(
         select(Admins).where(Admins.code == code)
         ).scalar_one_or_none()
-    
+
     if not user:
         flash("User does not exist.")
         return app.redirect("/teacher-login")
-    
+
     if check_password_hash(user.password, password):
         # Set account sessions
         session["teacher"] = user.id
@@ -383,31 +404,34 @@ def teacherloginregister():
         return app.redirect("/teacher-login")
 
 
-# student login page
 @app.route("/student-login")
 def student_login():
+    """LOGIN TO STUDENT ACCOUNT"""
+
     # check if user is already logged in
     if session.get("student") or session.get("teacher"):
         return app.redirect("/")
-    
+
     return render_template("student-login.html", title="Student Login")
 
 
-# Redirect to google login
 @app.route("/student-loginregister")
 def student_loginregister():
+    """GOOGLE LOGIN API REDIRECT"""
+
     # Catch users that are already logged in
     if session.get("student"):
         return app.redirect("/")
-    
+
     # Send user to google login
     redirect_uri = url_for("google_callback", _external=True)
     return google.authorize_redirect(redirect_uri)
 
 
-# Google login functionality
 @app.route("/auth/google/callback")
 def google_callback():
+    """CHECK STUDENT EMAIL FOR LOGIN"""
+
     # Get user information
     token = google.authorize_access_token()
     user = token["userinfo"]
@@ -415,7 +439,7 @@ def google_callback():
     email = user["email"]
 
     # Check if email is from Burnside
-    if not email.endswith(auth.domain_name):
+    if not email.endswith(auth.DOMAIN_NAME):
         flash("Please use your school Google account.")
         return app.redirect("/student-login")
 
@@ -435,31 +459,32 @@ def google_callback():
     return app.redirect("/")
 
 
-# Removes all sessions and returns home
 @app.route("/sign-out")
 def sign_out():
+    """REMOVES ALL SESSIONS/LOGOUT"""
     session.clear()
     return app.redirect("/")
 
 
-# Student-end attendance
 @app.route("/check-in")
 def check_in():
+    """CHECK IN FOR ATTENDANCE TABLE"""
+
     double_counter = False
     current_date = date.today()
 
     # Catch users that are not logged in
     if "student" not in session or not session["student"]:
-            abort(401)
+        abort(401)
 
     # Catch if user already checked in
-    attendance = db.session().execute(
+    attendance_check = db.session().execute(
         select(Attendance).where(
-            Attendance.student_id == session["name"], 
+            Attendance.student_id == session["name"],
             Attendance.date == current_date)
     ).scalar_one_or_none()
 
-    if attendance:
+    if attendance_check:
         double_counter = True
 
     return render_template("check-in.html", title="Check-in", double_counter=double_counter)
@@ -467,6 +492,8 @@ def check_in():
 
 @app.route("/check-register", methods=["GET", "POST"])
 def checkin_register():
+    """CHECK NAME OF CONNECTED NETWORK"""
+
     wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
     data = wifi.decode('utf-8')
     network_name = str()
@@ -481,24 +508,24 @@ def checkin_register():
 
     # Time frame checks
     # Check it is a school day
-    if current_day not in auth.time_frames:
+    if current_day not in auth.TIME_FRAMES:
         flash("Attendance is not available today.")
         return app.redirect("/check-in")
-    
+
     # Get today's time frame
     start_time = datetime.strptime(
-        auth.time_frames[current_day][0], "%H:%M"
+        auth.TIME_FRAMES[current_day][0], "%H:%M"
     ).time()
-    
+
     end_time = datetime.strptime(
-        auth.time_frames[current_day][1], "%H:%M"
+        auth.TIME_FRAMES[current_day][1], "%H:%M"
     ).time()
-    
+
     # Check whether current time is within the allowed period
     if not start_time <= current_time <= end_time:
         flash(
             f"Attendance is only available between "
-            f"{auth.time_frames[current_day][0]}am and {auth.time_frames[current_day][1]}am"
+            f"{auth.TIME_FRAMES[current_day][0]}am and {auth.TIME_FRAMES[current_day][1]}am"
         )
         return app.redirect("/check-in")
 
@@ -510,38 +537,41 @@ def checkin_register():
             break
 
     # Catch if network name isn't allowed
-    if not network_name in auth.allowed_networks:
+    if network_name not in auth.ALLOWED_NETWORKS:
         flash("Please connect to School WiFi")
         app.redirect("/check-in")
-    
+
     # Check if network name was extracted
     if not network_name:
         flash("Not connected to any network")
         app.redirect("/check-in")
 
     # Add log to attendance table
-    if network_name in auth.allowed_networks:
+    if network_name in auth.ALLOWED_NETWORKS:
         db.session().add(
-            Attendance(date=current_date, 
-                    location=location, 
+            Attendance(date=current_date,
+                    location=location,
                     student_id=session["name"])
             )
         db.session().commit()
-    
+
     return app.redirect("/check-in")
 
 
 # ERROR HANDLING
 @app.errorhandler(404)
 def page_not_found(error):
+    """PAGE NOT FOUND"""
     return render_template("error.html", title="Page Not Found", error=error), 404
 
 @app.errorhandler(500)
 def internal_server_error(error):
+    """INTERNAL SERVER ERROR"""
     return render_template("error.html", title="Internal Server Error", error=error), 500
 
 @app.errorhandler(401)
 def session_not_found(error):
+    """UNAUTHORISED/SESSIONS NOT ALLOWED"""
     return render_template("error.html", title="Unauthorised", error=error), 401
 
 
